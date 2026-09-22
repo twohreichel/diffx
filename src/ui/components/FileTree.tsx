@@ -17,12 +17,15 @@ import {
 } from 'lucide-react'
 import type { FileDiffMetadata } from '@pierre/diffs'
 
+const STRUCTURAL_MARK = 'No structural change — only formatting differs'
+
 interface FileTreeProps {
   files: FileDiffMetadata[]
   activeFile: string | null
   commentCounts: Record<string, number>
   viewedFiles: Set<string>
   untrackedFiles: Set<string>
+  structurallyUnchanged: Set<string>
   onFileClick: (filePath: string) => void
   collapsed?: boolean
   onToggleCollapse?: () => void
@@ -110,6 +113,7 @@ function TreeDir({
   commentCounts,
   viewedFiles,
   untrackedFiles,
+  structurallyUnchanged,
   onFileClick,
   depth,
   defaultExpanded,
@@ -119,6 +123,7 @@ function TreeDir({
   commentCounts: Record<string, number>
   viewedFiles: Set<string>
   untrackedFiles: Set<string>
+  structurallyUnchanged: Set<string>
   onFileClick: (filePath: string) => void
   depth: number
   defaultExpanded: boolean
@@ -154,6 +159,7 @@ function TreeDir({
                 commentCounts={commentCounts}
                 viewedFiles={viewedFiles}
                 untrackedFiles={untrackedFiles}
+                structurallyUnchanged={structurallyUnchanged}
                 onFileClick={onFileClick}
                 depth={depth + 1}
                 defaultExpanded={true}
@@ -166,6 +172,7 @@ function TreeDir({
                 commentCount={commentCounts[child.file?.name ?? ''] ?? 0}
                 viewed={viewedFiles.has(child.file?.name ?? '')}
                 untrackedFiles={untrackedFiles}
+                onlyFormatting={structurallyUnchanged.has(child.file?.name ?? '')}
                 onFileClick={onFileClick}
                 depth={depth + 1}
               />
@@ -183,6 +190,7 @@ function TreeFile({
   commentCount,
   viewed,
   untrackedFiles,
+  onlyFormatting,
   onFileClick,
   depth,
 }: {
@@ -191,6 +199,7 @@ function TreeFile({
   commentCount: number
   viewed: boolean
   untrackedFiles: Set<string>
+  onlyFormatting: boolean
   onFileClick: (filePath: string) => void
   depth: number
 }) {
@@ -207,6 +216,11 @@ function TreeFile({
       >
         {getFileIcon(node.file, viewed, untrackedFiles)}
         <span className="ft-file-name">{node.name}</span>
+        {onlyFormatting && (
+          <span className="ft-structural-mark" title={STRUCTURAL_MARK} aria-label={STRUCTURAL_MARK}>
+            ≡
+          </span>
+        )}
         {commentCount > 0 && (
           <span className="ft-comment-count">
             <MessageSquare size={14} />
@@ -218,7 +232,7 @@ function TreeFile({
   )
 }
 
-export function FileTree({ files, activeFile, commentCounts, viewedFiles, untrackedFiles, onFileClick, collapsed, onToggleCollapse }: FileTreeProps) {
+export function FileTree({ files, activeFile, commentCounts, viewedFiles, untrackedFiles, structurallyUnchanged, onFileClick, collapsed, onToggleCollapse }: FileTreeProps) {
   const [filter, setFilter] = useState('')
 
   const filteredFiles = useMemo(() => {
@@ -282,6 +296,7 @@ export function FileTree({ files, activeFile, commentCounts, viewedFiles, untrac
               commentCounts={commentCounts}
               viewedFiles={viewedFiles}
               untrackedFiles={untrackedFiles}
+              structurallyUnchanged={structurallyUnchanged}
               onFileClick={onFileClick}
               depth={0}
               defaultExpanded={true}
@@ -294,6 +309,7 @@ export function FileTree({ files, activeFile, commentCounts, viewedFiles, untrac
               commentCount={commentCounts[node.file?.name ?? ''] ?? 0}
               viewed={viewedFiles.has(node.file?.name ?? '')}
               untrackedFiles={untrackedFiles}
+              onlyFormatting={structurallyUnchanged.has(node.file?.name ?? '')}
               onFileClick={onFileClick}
               depth={0}
             />

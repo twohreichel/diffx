@@ -167,6 +167,17 @@ export function App() {
     [settings.staged, settings.untracked, settings.ignoreComments],
   )
 
+  const [structurallyUnchanged, setStructurallyUnchanged] = useState<Set<string>>(() => new Set())
+  const handleStructuralResult = useCallback((filePath: string, unchanged: boolean) => {
+    setStructurallyUnchanged((previous) => {
+      if (previous.has(filePath) === unchanged) return previous
+      const next = new Set(previous)
+      if (unchanged) next.add(filePath)
+      else next.delete(filePath)
+      return next
+    })
+  }, [])
+
   const moves = useMoves(displayFiles, { minLines: settings.moveMinLines, similarity: settings.moveSimilarity })
   const handleJumpToMove = useCallback((run: MoveRun) => {
     setActiveFile(run.path)
@@ -221,6 +232,7 @@ export function App() {
         commentCounts={commentCounts}
         viewedFiles={viewedFiles}
         untrackedFiles={untrackedSet}
+        structurallyUnchanged={structurallyUnchanged}
         onFileClick={handleFileClick}
         collapsed={sidebar.collapsed}
         onToggleCollapse={handleToggleCollapse}
@@ -317,6 +329,7 @@ export function App() {
               moves={moves}
               onJumpToMove={handleJumpToMove}
               structuralQuery={structuralQuery}
+              onStructuralResult={handleStructuralResult}
               viewedFiles={viewedFiles}
               binaryFiles={binaryFileMap}
               onViewedChange={handleViewedChange}

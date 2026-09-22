@@ -20,6 +20,7 @@ interface DiffViewerProps {
   moves: MovePair[]
   onJumpToMove: (run: MoveRun) => void
   structuralQuery: StructuralQuery
+  onStructuralResult: (filePath: string, unchanged: boolean) => void
   viewedFiles: Set<string>
   binaryFiles: Map<string, BinaryFileInfo>
   onViewedChange: (filePath: string, viewed: boolean) => void
@@ -41,6 +42,7 @@ export const DiffViewer = memo(function DiffViewer({
   moves,
   onJumpToMove,
   structuralQuery,
+  onStructuralResult,
   viewedFiles,
   binaryFiles,
   onViewedChange,
@@ -104,6 +106,7 @@ export const DiffViewer = memo(function DiffViewer({
             moves={moves}
             onJumpToMove={onJumpToMove}
             structuralQuery={structuralQuery}
+            onStructuralResult={onStructuralResult}
             diffStyle={diffStyle}
             blinkState={blinkState}
             lineDiff={lineDiff}

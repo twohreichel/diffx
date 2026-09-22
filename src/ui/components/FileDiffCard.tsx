@@ -1,4 +1,4 @@
-import { useState, useRef, memo } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { FileDiff } from '@pierre/diffs/react'
 import type { DiffLineAnnotation, FileDiffMetadata, AnnotationSide } from '@pierre/diffs'
 import type { ReviewComment } from '../../types'
@@ -54,6 +54,7 @@ interface FileDiffCardProps {
   moves: MovePair[]
   onJumpToMove: (run: MoveRun) => void
   structuralQuery: StructuralQuery
+  onStructuralResult: (filePath: string, unchanged: boolean) => void
   diffStyle: ViewMode
   blinkState: BlinkState
   lineDiff: LineDiffMode
@@ -73,6 +74,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   moves,
   onJumpToMove,
   structuralQuery,
+  onStructuralResult,
   diffStyle,
   blinkState,
   lineDiff,
@@ -102,6 +104,10 @@ export const FileDiffCard = memo(function FileDiffCard({
   // the notice above them carries the reason.
   const fellBackToLines = diffStyle === 'structural' && marked === null && !structural.loading
   const notice = structuralLine(structural)
+
+  useEffect(() => {
+    if (structural.result) onStructuralResult(filePath, structural.result.unchanged)
+  }, [filePath, structural.result, onStructuralResult])
 
   const getLineContent = (side: AnnotationSide, lineNumber: number): string => {
     const lines = side === 'additions' ? fileDiff.additionLines : fileDiff.deletionLines

@@ -42,6 +42,7 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
       moves={[]}
       onJumpToMove={vi.fn()}
       structuralQuery={{ staged: true, untracked: true, ignoreComments: false }}
+      onStructuralResult={vi.fn()}
       diffStyle="split"
       blinkState="after"
       lineDiff="word"
@@ -178,6 +179,20 @@ describe('FileDiffCard structural mode', () => {
     serve({ available: true, result: { ...changed, unchanged: true, changes: [] } })
     renderCard({ fileDiff: withOids, diffStyle: 'structural' })
     expect(await screen.findByText(/No structural change/)).toBeInTheDocument()
+  })
+
+  it('reports a formatting-only change so the tree can mark it', async () => {
+    serve({ available: true, result: { ...changed, unchanged: true, changes: [] } })
+    const onStructuralResult = vi.fn()
+    renderCard({ fileDiff: withOids, diffStyle: 'structural', onStructuralResult })
+    await waitFor(() => expect(onStructuralResult).toHaveBeenCalledWith('src/app.ts', true))
+  })
+
+  it('reports a file that did change structurally', async () => {
+    serve({ available: true, result: changed })
+    const onStructuralResult = vi.fn()
+    renderCard({ fileDiff: withOids, diffStyle: 'structural', onStructuralResult })
+    await waitFor(() => expect(onStructuralResult).toHaveBeenCalledWith('src/app.ts', false))
   })
 
   it('falls back to the unified rows and names the reason', async () => {

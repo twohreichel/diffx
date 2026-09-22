@@ -1002,6 +1002,16 @@ body {
     white-space: nowrap;
 }
 
+/* Structural mark */
+.ft-structural-mark {
+    margin-left: 6px;
+    font-size: 14px;
+    flex-shrink: 0;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: help;
+}
+
 /* Comment count */
 .ft-comment-count {
     display: flex;
