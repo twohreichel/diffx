@@ -8,6 +8,7 @@ import { parseContextWidth } from './context.js'
 import { InMemoryCommentStore } from './comments.js'
 import type { CommentStore } from './comments.js'
 import { isSafePath } from './path.js'
+import { detectDifft, structuralDiff, type DifftAvailability } from './structural.js'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -91,6 +92,14 @@ function diffContainsFileVersion(patch: string, path: string, oldOid: string, ne
   return false
 }
 
+/** Asked once, because the answer cannot change while the server runs. */
+let difft: DifftAvailability | null = null
+
+function difftAvailability(): DifftAvailability {
+  difft ??= detectDifft()
+  return difft
+}
+
 export function createApp(clientDir: string, customDiffArgs?: string[], commentStore?: CommentStore) {
   const app = new Hono()
   const isCustomMode = !!customDiffArgs
@@ -114,7 +123,7 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
     const binaryFiles = parseBinaryFiles(patch, untrackedSet)
     const filePaths = parseFilePaths(patch)
     const tabSizeMap = getTabSizeForFiles(filePaths)
-    return c.json({ patch, repoName, branch, customMode: isCustomMode, binaryFiles, tabSizeMap, untrackedFiles })
+    return c.json({ patch, repoName, branch, customMode: isCustomMode, binaryFiles, tabSizeMap, untrackedFiles, structural: difftAvailability() })
   })
 
   app.get('/api/file-content', (c) => {
@@ -164,6 +173,34 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
       return c.json({ error: 'Content unavailable' }, 404)
     }
     return c.json({ old: oldContent, new: newContent })
+  })
+
+  // Structural comparison of one file, on demand. The file version is validated
+  // exactly like /api/file-versions, so no blob outside the current diff is reachable.
+  app.get('/api/structural', (c) => {
+    const path = c.req.query('path')
+    const oldOid = c.req.query('oldOid')
+    const newOid = c.req.query('newOid')
+    if (!path || !oldOid || !newOid) {
+      return c.json({ error: 'Missing path or oids' }, 400)
+    }
+    const availability = difftAvailability()
+    if (!availability.available) {
+      return c.json({ available: false, reason: availability.reason })
+    }
+    const staged = c.req.query('staged') === 'true'
+    const untracked = c.req.query('untracked') === 'true'
+    const patch = isCustomMode ? getCustomGitDiff(customDiffArgs) : getGitDiff({ staged, untracked })
+    if (!diffContainsFileVersion(patch, path, oldOid, newOid)) {
+      return c.json({ error: 'File version not in current diff' }, 404)
+    }
+    const oldContent = /^0+$/.test(oldOid) ? '' : getBlobContent(oldOid)
+    const newContent = /^0+$/.test(newOid) ? '' : getBlobContent(newOid) ?? getWorktreeFileContent(path)
+    if (oldContent == null || newContent == null) {
+      return c.json({ error: 'Content unavailable' }, 404)
+    }
+    const ignoreComments = c.req.query('ignoreComments') === 'true'
+    return c.json(structuralDiff(path, oldContent, newContent, { ignoreComments }))
   })
 
   app.get('/api/settings', (c) => {
