@@ -1,0 +1,251 @@
+{
+  "_note": "Recon capture: the /api/diff envelope plus the client-side parse of its patch. Patch source: commit 9c27f70 of this repository.",
+  "apiDiffResponse": {
+    "patch": "diff --git a/.changeset/sidebar-resize.md b/.changeset/sidebar-resize.md\nnew file mode 100644\nindex 0000000..640eb2e\n--- /dev/null\n+++ b/.changeset/sidebar-resize.md\n@@ -0,0 +1,5 @@\n+---\n+'diffx-cli': minor\n+---\n+\n+Add draggable resizing to the file sidebar, with width and collapsed state persisted across sessions.\ndiff --git a/src/ui/App.tsx b/src/ui/App.tsx\nindex 407d163..76d801c 100644\n--- a/src/ui/App.tsx\n+++ b/src/ui/App.tsx\n@@ -1,6 +1,5 @@\n import { useState, useMemo, useCallback, useEffect } from 'react'\n import { Resizable } from 'react-resizable'\n-import 'react-resizable/css/styles.css'\n import { parsePatchFiles } from '@pierre/diffs'\n import { Virtualizer } from '@pierre/diffs/react'\n import type { FileDiffMetadata } from '@pierre/diffs'\n@@ -40,7 +39,7 @@ export function App() {\n     useComments()\n   const [activeFile, setActiveFile] = useState<string | null>(null)\n   const [sidebar, setSidebar] = useState(() => SidebarStorage.load())\n-  const maxSidebarWidth = useWindowSize({ factor: 0.5 })\n+  const maxSidebarWidth = Math.max(SidebarStorage.minSize, useWindowSize({ factor: 0.5 }))\n \n   const handleResize = useCallback((_e: React.SyntheticEvent, data: { size: { width: number } }) => {\n     setSidebar((prev) => prev.withSize(data.size.width))\ndiff --git a/vite.config.ts b/vite.config.ts\nindex c6424ca..e04e205 100644\n--- a/vite.config.ts\n+++ b/vite.config.ts\n@@ -5,7 +5,7 @@ export default defineConfig({\n   plugins: [react()],\n   root: '.',\n   define: {\n-    'process.env': '{}',\n+    'process.env.NODE_ENV': JSON.stringify('production'),\n   },\n   build: {\n     outDir: 'dist/client',\n",
+    "repoName": "diffx",
+    "branch": "main",
+    "customMode": false,
+    "binaryFiles": [],
+    "tabSizeMap": {},
+    "untrackedFiles": []
+  },
+  "parsedFiles": [
+    {
+      "name": ".changeset/sidebar-resize.md",
+      "type": "new",
+      "hunks": [
+        {
+          "collapsedBefore": 0,
+          "splitLineCount": 5,
+          "splitLineStart": 0,
+          "unifiedLineCount": 5,
+          "unifiedLineStart": 0,
+          "additionCount": 5,
+          "additionStart": 1,
+          "additionLines": 5,
+          "deletionCount": 0,
+          "deletionStart": 0,
+          "deletionLines": 0,
+          "deletionLineIndex": 0,
+          "additionLineIndex": 0,
+          "hunkContent": [
+            {
+              "type": "change",
+              "additions": 5,
+              "deletions": 0,
+              "additionLineIndex": 0,
+              "deletionLineIndex": 0
+            }
+          ],
+          "hunkSpecs": "@@ -0,0 +1,5 @@\n",
+          "noEOFCRAdditions": false,
+          "noEOFCRDeletions": false
+        }
+      ],
+      "splitLineCount": 5,
+      "unifiedLineCount": 5,
+      "isPartial": true,
+      "additionLines": [
+        "---\n",
+        "'diffx-cli': minor\n",
+        "---\n",
+        "\n",
+        "Add draggable resizing to the file sidebar, with width and collapsed state persisted across sessions.\n"
+      ],
+      "deletionLines": [],
+      "mode": "100644",
+      "prevObjectId": "0000000",
+      "newObjectId": "640eb2e"
+    },
+    {
+      "name": "src/ui/App.tsx",
+      "type": "change",
+      "hunks": [
+        {
+          "collapsedBefore": 0,
+          "splitLineCount": 6,
+          "splitLineStart": 0,
+          "unifiedLineCount": 6,
+          "unifiedLineStart": 0,
+          "additionCount": 5,
+          "additionStart": 1,
+          "additionLines": 0,
+          "deletionCount": 6,
+          "deletionStart": 1,
+          "deletionLines": 1,
+          "deletionLineIndex": 0,
+          "additionLineIndex": 0,
+          "hunkContent": [
+            {
+              "type": "context",
+              "lines": 2,
+              "additionLineIndex": 0,
+              "deletionLineIndex": 0
+            },
+            {
+              "type": "change",
+              "additions": 0,
+              "deletions": 1,
+              "additionLineIndex": 2,
+              "deletionLineIndex": 2
+            },
+            {
+              "type": "context",
+              "lines": 3,
+              "additionLineIndex": 2,
+              "deletionLineIndex": 3
+            }
+          ],
+          "hunkSpecs": "@@ -1,6 +1,5 @@\n",
+          "noEOFCRAdditions": false,
+          "noEOFCRDeletions": false
+        },
+        {
+          "collapsedBefore": 33,
+          "splitLineCount": 7,
+          "splitLineStart": 39,
+          "unifiedLineCount": 8,
+          "unifiedLineStart": 39,
+          "additionCount": 7,
+          "additionStart": 39,
+          "additionLines": 1,
+          "deletionCount": 7,
+          "deletionStart": 40,
+          "deletionLines": 1,
+          "deletionLineIndex": 6,
+          "additionLineIndex": 5,
+          "hunkContent": [
+            {
+              "type": "context",
+              "lines": 3,
+              "additionLineIndex": 5,
+              "deletionLineIndex": 6
+            },
+            {
+              "type": "change",
+              "additions": 1,
+              "deletions": 1,
+              "additionLineIndex": 8,
+              "deletionLineIndex": 9
+            },
+            {
+              "type": "context",
+              "lines": 3,
+              "additionLineIndex": 9,
+              "deletionLineIndex": 10
+            }
+          ],
+          "hunkContext": "export function App() {",
+          "hunkSpecs": "@@ -40,7 +39,7 @@ export function App() {\n",
+          "noEOFCRAdditions": false,
+          "noEOFCRDeletions": false
+        }
+      ],
+      "splitLineCount": 46,
+      "unifiedLineCount": 47,
+      "isPartial": true,
+      "additionLines": [
+        "import { useState, useMemo, useCallback, useEffect } from 'react'\n",
+        "import { Resizable } from 'react-resizable'\n",
+        "import { parsePatchFiles } from '@pierre/diffs'\n",
+        "import { Virtualizer } from '@pierre/diffs/react'\n",
+        "import type { FileDiffMetadata } from '@pierre/diffs'\n",
+        "    useComments()\n",
+        "  const [activeFile, setActiveFile] = useState<string | null>(null)\n",
+        "  const [sidebar, setSidebar] = useState(() => SidebarStorage.load())\n",
+        "  const maxSidebarWidth = Math.max(SidebarStorage.minSize, useWindowSize({ factor: 0.5 }))\n",
+        "\n",
+        "  const handleResize = useCallback((_e: React.SyntheticEvent, data: { size: { width: number } }) => {\n",
+        "    setSidebar((prev) => prev.withSize(data.size.width))\n"
+      ],
+      "deletionLines": [
+        "import { useState, useMemo, useCallback, useEffect } from 'react'\n",
+        "import { Resizable } from 'react-resizable'\n",
+        "import 'react-resizable/css/styles.css'\n",
+        "import { parsePatchFiles } from '@pierre/diffs'\n",
+        "import { Virtualizer } from '@pierre/diffs/react'\n",
+        "import type { FileDiffMetadata } from '@pierre/diffs'\n",
+        "    useComments()\n",
+        "  const [activeFile, setActiveFile] = useState<string | null>(null)\n",
+        "  const [sidebar, setSidebar] = useState(() => SidebarStorage.load())\n",
+        "  const maxSidebarWidth = useWindowSize({ factor: 0.5 })\n",
+        "\n",
+        "  const handleResize = useCallback((_e: React.SyntheticEvent, data: { size: { width: number } }) => {\n",
+        "    setSidebar((prev) => prev.withSize(data.size.width))\n"
+      ],
+      "prevObjectId": "407d163",
+      "newObjectId": "76d801c",
+      "mode": "100644"
+    },
+    {
+      "name": "vite.config.ts",
+      "type": "change",
+      "hunks": [
+        {
+          "collapsedBefore": 4,
+          "splitLineCount": 7,
+          "splitLineStart": 4,
+          "unifiedLineCount": 8,
+          "unifiedLineStart": 4,
+          "additionCount": 7,
+          "additionStart": 5,
+          "additionLines": 1,
+          "deletionCount": 7,
+          "deletionStart": 5,
+          "deletionLines": 1,
+          "deletionLineIndex": 0,
+          "additionLineIndex": 0,
+          "hunkContent": [
+            {
+              "type": "context",
+              "lines": 3,
+              "additionLineIndex": 0,
+              "deletionLineIndex": 0
+            },
+            {
+              "type": "change",
+              "additions": 1,
+              "deletions": 1,
+              "additionLineIndex": 3,
+              "deletionLineIndex": 3
+            },
+            {
+              "type": "context",
+              "lines": 3,
+              "additionLineIndex": 4,
+              "deletionLineIndex": 4
+            }
+          ],
+          "hunkContext": "export default defineConfig({",
+          "hunkSpecs": "@@ -5,7 +5,7 @@ export default defineConfig({\n",
+          "noEOFCRAdditions": false,
+          "noEOFCRDeletions": false
+        }
+      ],
+      "splitLineCount": 11,
+      "unifiedLineCount": 12,
+      "isPartial": true,
+      "additionLines": [
+        "  plugins: [react()],\n",
+        "  root: '.',\n",
+        "  define: {\n",
+        "    'process.env.NODE_ENV': JSON.stringify('production'),\n",
+        "  },\n",
+        "  build: {\n",
+        "    outDir: 'dist/client',\n"
+      ],
+      "deletionLines": [
+        "  plugins: [react()],\n",
+        "  root: '.',\n",
+        "  define: {\n",
+        "    'process.env': '{}',\n",
+        "  },\n",
+        "  build: {\n",
+        "    outDir: 'dist/client',\n"
+      ],
+      "prevObjectId": "c6424ca",
+      "newObjectId": "e04e205",
+      "mode": "100644"
+    }
+  ]
+}

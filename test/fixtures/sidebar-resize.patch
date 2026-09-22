@@ -1,0 +1,44 @@
+diff --git a/.changeset/sidebar-resize.md b/.changeset/sidebar-resize.md
+new file mode 100644
+index 0000000..640eb2e
+--- /dev/null
++++ b/.changeset/sidebar-resize.md
+@@ -0,0 +1,5 @@
++---
++'diffx-cli': minor
++---
++
++Add draggable resizing to the file sidebar, with width and collapsed state persisted across sessions.
+diff --git a/src/ui/App.tsx b/src/ui/App.tsx
+index 407d163..76d801c 100644
+--- a/src/ui/App.tsx
++++ b/src/ui/App.tsx
+@@ -1,6 +1,5 @@
+ import { useState, useMemo, useCallback, useEffect } from 'react'
+ import { Resizable } from 'react-resizable'
+-import 'react-resizable/css/styles.css'
+ import { parsePatchFiles } from '@pierre/diffs'
+ import { Virtualizer } from '@pierre/diffs/react'
+ import type { FileDiffMetadata } from '@pierre/diffs'
+@@ -40,7 +39,7 @@ export function App() {
+     useComments()
+   const [activeFile, setActiveFile] = useState<string | null>(null)
+   const [sidebar, setSidebar] = useState(() => SidebarStorage.load())
+-  const maxSidebarWidth = useWindowSize({ factor: 0.5 })
++  const maxSidebarWidth = Math.max(SidebarStorage.minSize, useWindowSize({ factor: 0.5 }))
+ 
+   const handleResize = useCallback((_e: React.SyntheticEvent, data: { size: { width: number } }) => {
+     setSidebar((prev) => prev.withSize(data.size.width))
+diff --git a/vite.config.ts b/vite.config.ts
+index c6424ca..e04e205 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -5,7 +5,7 @@ export default defineConfig({
+   plugins: [react()],
+   root: '.',
+   define: {
+-    'process.env': '{}',
++    'process.env.NODE_ENV': JSON.stringify('production'),
+   },
+   build: {
+     outDir: 'dist/client',
