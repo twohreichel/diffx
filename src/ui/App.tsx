@@ -4,11 +4,14 @@ import { parsePatchFiles } from '@pierre/diffs'
 import { Virtualizer } from '@pierre/diffs/react'
 import type { FileDiffMetadata } from '@pierre/diffs'
 import type { ReviewComment } from '../types'
+import { FULL_CONTEXT_LINE_CAP, estimateTotalLines, stepContext, type ContextWidth } from '../context'
 import { useDiff } from './hooks/useDiff'
 import { useComments } from './hooks/useComments'
 import { useSettings } from './hooks/useSettings'
 import { useViewed } from './hooks/useViewed'
 import { useFullDiffs, fileKey } from './hooks/useFullDiffs'
+import { useShortcuts } from './hooks/useShortcuts'
+import { useScrollAnchor } from './hooks/useScrollAnchor'
 import { Toolbar } from './components/Toolbar'
 import { DiffViewer } from './components/DiffViewer'
 import { FileTree } from './components/FileTree'
@@ -34,6 +37,7 @@ export function App() {
   const { patch, repoName, branch, customMode, binaryFiles, tabSizeMap, untrackedFiles, loading, error } = useDiff({
     staged: settings.staged,
     untracked: settings.untracked,
+    context: settings.context,
   })
   const { comments, addComment, removeComment, copyAllComments } =
     useComments()
@@ -136,6 +140,34 @@ export function App() {
     return map
   }, [comments])
 
+  // A global control cannot be disabled per file, so it goes quiet only when no
+  // file in the diff has lines for context to apply to.
+  const contextDisabled = files.length > 0 && files.every((f) => binaryFileMap.has(f.name))
+
+  const { capture } = useScrollAnchor(patch)
+
+  const handleContextChange = useCallback(
+    (next: ContextWidth) => {
+      if (next === 'full') {
+        const lines = estimateTotalLines(files)
+        if (
+          lines > FULL_CONTEXT_LINE_CAP &&
+          !window.confirm(`Full context spans at least ${lines} lines. Render it?`)
+        ) {
+          return
+        }
+      }
+      capture()
+      updateSettings({ context: next })
+    },
+    [capture, files, updateSettings],
+  )
+
+  useShortcuts({
+    '[': () => !contextDisabled && handleContextChange(stepContext(settings.context, -1)),
+    ']': () => !contextDisabled && handleContextChange(stepContext(settings.context, 1)),
+  })
+
   const handleFileClick = useCallback((filePath: string) => {
     setActiveFile(filePath)
     const el = document.getElementById(`file-${filePath}`)
@@ -190,12 +222,15 @@ export function App() {
         deletions={diffStats.deletions}
         commentCount={comments.length}
         diffStyle={settings.diffStyle}
-        diffOptions={{ staged: settings.staged, untracked: settings.untracked }}
+        diffOptions={{ staged: settings.staged, untracked: settings.untracked, context: settings.context }}
+        context={settings.context}
+        contextDisabled={contextDisabled}
         defaultTabSize={settings.defaultTabSize}
         softWrap={settings.softWrap}
         browser={settings.browser}
         customMode={customMode}
         onDiffStyleChange={(style) => updateSettings({ diffStyle: style })}
+        onContextChange={handleContextChange}
         onDiffOptionsChange={(options) => updateSettings(options)}
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}
         onSoftWrapChange={(softWrap) => updateSettings({ softWrap })}

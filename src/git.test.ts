@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { parsePatchFiles } from '@pierre/diffs'
 import { getCustomGitDiff, getGitDiff } from './git.js'
 
 const FILE = 'sample.txt'
@@ -11,6 +12,15 @@ const CHANGED_LINE = 10
 
 function contextLines(patch: string): number {
   return patch.split('\n').filter((line) => line.startsWith(' ')).length
+}
+
+/** Counts the unchanged rows the renderer would draw for a patch. */
+function renderedContextSegments(patch: string): number {
+  return parsePatchFiles(patch)
+    .flatMap((parsed) => parsed.files)
+    .flatMap((file) => file.hunks)
+    .flatMap((hunk) => hunk.hunkContent)
+    .filter((segment) => segment.type === 'context').length
 }
 
 function body(marker: string): string {
@@ -64,5 +74,13 @@ describe('git diff context width', () => {
 
   it('applies the requested width when the user chose none', () => {
     expect(contextLines(getCustomGitDiff([], 0))).toBe(0)
+  })
+
+  it('hands the renderer no context rows at width 0', () => {
+    expect(renderedContextSegments(getGitDiff({ context: 0 }))).toBe(0)
+  })
+
+  it('hands the renderer context rows at width 3', () => {
+    expect(renderedContextSegments(getGitDiff({ context: 3 }))).toBeGreaterThan(0)
   })
 })

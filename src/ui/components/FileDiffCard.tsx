@@ -4,6 +4,7 @@ import type { DiffLineAnnotation, FileDiffMetadata, AnnotationSide } from '@pier
 import type { ReviewComment } from '../../types'
 import { CommentForm } from './CommentForm'
 import { CommentBubble } from './CommentBubble'
+import { hiddenAnnotations } from '../hiddenComments'
 
 interface PendingComment {
   side: AnnotationSide
@@ -38,6 +39,8 @@ export const FileDiffCard = memo(function FileDiffCard({
   onDeleteComment,
 }: FileDiffCardProps) {
   const [pending, setPending] = useState<PendingComment | null>(null)
+
+  const hidden = hiddenAnnotations(fileDiff, annotations)
 
   const getLineContent = (side: AnnotationSide, lineNumber: number): string => {
     const lines = side === 'additions' ? fileDiff.additionLines : fileDiff.deletionLines
@@ -103,14 +106,24 @@ export const FileDiffCard = memo(function FileDiffCard({
             }}
             lineAnnotations={allAnnotations}
             renderHeaderMetadata={() => (
-              <label className="viewed-label" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={viewed}
-                  onChange={(e) => onViewedChange(filePath, e.target.checked)}
-                />
-                Viewed
-              </label>
+              <>
+                {hidden.length > 0 && (
+                  <span
+                    className="hidden-comment-badge"
+                    title={`${hidden.length} comment(s) on lines the current context width leaves out`}
+                  >
+                    {hidden.length} hidden
+                  </span>
+                )}
+                <label className="viewed-label" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={viewed}
+                    onChange={(e) => onViewedChange(filePath, e.target.checked)}
+                  />
+                  Viewed
+                </label>
+              </>
             )}
             renderAnnotation={(annotation) => {
               if ('_pending' in annotation.metadata) {

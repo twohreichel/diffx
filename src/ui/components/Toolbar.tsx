@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { GitBranch, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
+import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 
 interface ToolbarProps {
   repoName: string
@@ -10,12 +11,15 @@ interface ToolbarProps {
   deletions: number
   commentCount: number
   diffStyle: 'split' | 'unified'
+  context: ContextWidth
+  contextDisabled: boolean
   diffOptions: DiffOptions
   defaultTabSize: number
   softWrap: boolean
   browser?: string
   customMode: boolean
   onDiffStyleChange: (style: 'split' | 'unified') => void
+  onContextChange: (context: ContextWidth) => void
   onDiffOptionsChange: (options: DiffOptions) => void
   onDefaultTabSizeChange: (size: number) => void
   onSoftWrapChange: (softWrap: boolean) => void
@@ -31,12 +35,15 @@ export function Toolbar({
   deletions,
   commentCount,
   diffStyle,
+  context,
+  contextDisabled,
   diffOptions,
   defaultTabSize,
   softWrap,
   browser,
   customMode,
   onDiffStyleChange,
+  onContextChange,
   onDiffOptionsChange,
   onDefaultTabSizeChange,
   onSoftWrapChange,
@@ -95,6 +102,32 @@ export function Toolbar({
           >
             Unified
           </button>
+        </div>
+        <div
+          className="toolbar-context"
+          role="group"
+          aria-label="Context"
+          title={
+            contextDisabled
+              ? 'Context does not apply: this diff contains only binary files'
+              : 'Lines of unchanged context around each change'
+          }
+        >
+          <span className="toolbar-context-label">Context</span>
+          <div className="toolbar-toggle">
+            {CONTEXT_STEPS.map((step) => (
+              <button
+                key={String(step)}
+                data-context={step}
+                className={`btn btn-sm ${context === step ? 'btn-active' : ''}`}
+                aria-pressed={context === step}
+                disabled={contextDisabled}
+                onClick={() => onContextChange(step)}
+              >
+                {step === 'full' ? 'Full' : step}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="settings-wrapper" ref={settingsRef}>
           <button

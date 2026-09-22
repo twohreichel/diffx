@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type { ContextWidth } from '../../context'
 
 export interface BinaryFileInfo {
   path: string
@@ -18,6 +19,7 @@ interface DiffData {
 export interface DiffOptions {
   staged: boolean
   untracked: boolean
+  context: ContextWidth
 }
 
 export function useDiff(options: DiffOptions) {
@@ -29,7 +31,7 @@ export function useDiff(options: DiffOptions) {
     setLoading(true)
     setError(null)
 
-    fetch(`/api/diff?staged=${options.staged}&untracked=${options.untracked}`)
+    fetch(`/api/diff?staged=${options.staged}&untracked=${options.untracked}&context=${options.context}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()
@@ -37,7 +39,7 @@ export function useDiff(options: DiffOptions) {
       .then((json) => setData(json))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [options.staged, options.untracked])
+  }, [options.staged, options.untracked, options.context])
 
   return {
     patch: data?.patch ?? null,

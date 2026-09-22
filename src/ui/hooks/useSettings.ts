@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
+import { DEFAULT_CONTEXT, type ContextWidth } from '../../context'
 
 export interface Settings {
   staged: boolean
   untracked: boolean
   diffStyle: 'split' | 'unified'
   defaultTabSize: number
+  context: ContextWidth
   softWrap: boolean
   browser?: string
 }
@@ -14,6 +16,7 @@ const DEFAULTS: Settings = {
   untracked: true,
   diffStyle: 'split',
   defaultTabSize: 4,
+  context: DEFAULT_CONTEXT,
   softWrap: false,
 }
 
