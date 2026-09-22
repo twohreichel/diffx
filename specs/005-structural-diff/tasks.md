@@ -25,4 +25,4 @@ Prerequisite: 000 complete. Strongly preferred: 002 merged (reuses `applyRanges`
 - [x] **T021** [P] Integration tests, skipped when `difft` is absent: reformat-only and wrapped-block fixtures.
 - [ ] **T022** Manual check on a reformat commit, a wrapped-block commit, and an unsupported-language file.
 - [x] **T023** Document the optional dependency in the fork README with install commands per OS.
-- [ ] **T024** Changeset; commit `feat(ui): structural diff mode via difftastic`.
+- [x] **T024** Changeset; commit `feat(ui): structural diff mode via difftastic`.
