@@ -44,6 +44,58 @@ working-tree file). More code, but independent of 001 and cheaper for huge files
 
 Decide at T002 based on whether 001 is merged.
 
+## Decision (T002): full context, and the renderer's split grid is the slot grid
+
+Option 1. Feature 001 has landed, so `context: 'full'` already produces `-U1000000`
+and `useFullDiffs` already upgrades every changed file to its complete contents.
+Blink forces that width while it is active and needs no new server route
+(Constitution IV).
+
+The second decision is larger and supersedes T004-T006 and T008-T010. The row
+slots this plan sketches already exist. `@pierre/diffs` renders split as
+`[data-diff-type=split]`, a two-column grid whose children are `<code
+data-deletions>` and `<code data-additions>`. Each column is a self-contained
+grid, and the renderer pads it with gap rows (`GapSpan = { type: 'gap', rows }`)
+so both columns carry the same rows at the same heights. That is the `Slot[]`
+above, already built, already highlighted by Shiki, already virtualized, already
+holding the line annotations.
+
+So Blink is the split rendering with one column hidden and the other widened to
+the full pane, plus a state the `Space` key flips. The toggle costs one
+`unsafeCSS` swap, nothing re-renders, and pixel stability is the renderer's own
+column alignment rather than something the fork has to guarantee.
+
+Consequences, recorded rather than applied silently:
+
+- **`buildSlots` is not written** (T004-T006). Building it would mean rebuilding
+  highlighting, virtualization and annotation placement in the fork against a
+  renderer that already does all three. The "memory on large files" risk below
+  goes with it, because nothing is rendered twice.
+- **Blink forces `overflow: 'scroll'` and ignores soft wrap.** Under
+  `[data-overflow=wrap]` the two split columns are `display: contents` inside one
+  four-column grid, so a column cannot be hidden without collapsing the layout.
+- **Placeholder runs are the renderer's gap rows, unlabelled** (T010). They hold
+  the position, which is what FR-003 needs, but the fork cannot write "3 lines
+  added here" into them: the rows live in a shadow root, carry no run-length
+  attribute, and exist only while the virtualizer keeps them on screen. The
+  mode's self-explanation moves to the BEFORE/AFTER indicator and the control's
+  tooltip.
+- **`n`/`p` walk change regions computed from the diff model** (T013), not
+  rendered slots. The rendered rows are virtualized, so they are not a list that
+  can be walked.
+- **Comments follow the column they sit on** (T017). The renderer places an
+  annotation in the deletions or the additions column by its side, so a comment
+  on a deleted line is on screen in BEFORE and off screen in AFTER, which is the
+  state it belongs to. Nothing is orphaned: the gap rows carry no line number and
+  cannot hold an annotation.
+- **Nothing is disabled per file** (T018). The mode is one global control, and
+  neither an unchanged file nor a non-image binary shows anything wrong under it.
+  The unchanged file renders its single column, the binary keeps its message.
+- **The large-file threshold is feature 001's** (T020): `FULL_CONTEXT_LINE_CAP`
+  and its confirm dialog, reached because Blink asks for full context.
+- **There is no help overlay to extend** (T023). The keys go into the mode
+  control's tooltip and into the README.
+
 ## Row-slot construction
 
 Pure function, the heart of the feature:
