@@ -79,3 +79,29 @@ render on detection.
 
 - False positives are worse than misses here: a wrongly-collapsed "move" hides a
   real change. Bias thresholds conservative and always keep the block expandable.
+
+## Decisions (implementation)
+
+- **Collapsing a moved run is not available against this renderer** (T015, FR-006).
+  `@pierre/diffs` computes the gap padding of one split column from the unhidden
+  model, so hiding rows in the deletions column desynchronizes it from the
+  additions column and the two stop lining up. The virtualizer also materializes
+  only a window of rows, which leaves an index-based selection meaningless while
+  scrolling. The marking carries the same message without the layout risk: the
+  run keeps its rows, loses the change colours and gains a badge that names its
+  counterpart.
+- **The inner edits are the lines the marking leaves out** (T014). A moved and
+  edited block marks every line it shares with its origin and leaves the rest in
+  their addition colour, so the edit shows up as the only coloured thing inside a
+  neutral block. A separate emphasis pass would repeat what the diff already says.
+- **Marked rows are addressed declaratively** (T012). The renderer writes the line
+  number into `data-line` on the code cell and into `data-column-number` on the
+  gutter cell, so one generated rule per marked line reaches both halves of the
+  row through `unsafeCSS`. Adding `[data-line-index]` as a third attribute lifts
+  the rule past the package's own line colouring without `!important`.
+- **The entropy floor is half the lines, not a fifth.** A run has to carry distinct
+  content in at least half its lines to be recognized again. A fifth still accepted
+  a six-line block of closing braces.
+- **Import reordering cannot pair** (T018). A departure and an arrival that belong
+  to the same change segment never form a pair, so a reordering inside one block
+  produces nothing, and the similarity floor rejects what the segment rule misses.
