@@ -458,6 +458,10 @@ body {
     letter-spacing: 0.04em;
 }
 
+.structural-toggle {
+    margin-right: 6px;
+}
+
 .structural-notice {
     padding: 6px 16px;
     font-size: 12px;

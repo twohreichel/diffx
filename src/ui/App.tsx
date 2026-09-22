@@ -5,7 +5,7 @@ import { Virtualizer } from '@pierre/diffs/react'
 import type { FileDiffMetadata } from '@pierre/diffs'
 import type { ReviewComment } from '../types'
 import { FULL_CONTEXT_LINE_CAP, estimateTotalLines, stepContext, type ContextWidth } from '../context'
-import { changeRegions, type ViewMode } from '../blink'
+import { changeRegions, toggledFileMode, type ViewMode } from '../blink'
 import type { MoveRun } from '../moves'
 import { useDiff } from './hooks/useDiff'
 import { useComments } from './hooks/useComments'
@@ -178,6 +178,20 @@ export function App() {
     })
   }, [])
 
+  const [fileModes, setFileModes] = useState<Map<string, ViewMode>>(() => new Map())
+  const handleToggleStructural = useCallback(
+    (filePath: string) => {
+      setFileModes((previous) => {
+        const next = new Map(previous)
+        const mode = toggledFileMode(previous.get(filePath) ?? settings.diffStyle, settings.diffStyle)
+        if (mode === null) next.delete(filePath)
+        else next.set(filePath, mode)
+        return next
+      })
+    },
+    [settings.diffStyle],
+  )
+
   const moves = useMoves(displayFiles, { minLines: settings.moveMinLines, similarity: settings.moveSimilarity })
   const handleJumpToMove = useCallback((run: MoveRun) => {
     setActiveFile(run.path)
@@ -202,6 +216,8 @@ export function App() {
     (next: ViewMode) => {
       // Blink asks git for the whole file, so it meets the same size question.
       if (next === 'blink' && settings.context !== 'full' && !confirmFullContext()) return
+      // The toolbar is the master control, so it takes the per-file switches back.
+      setFileModes(new Map())
       updateSettings({ diffStyle: next })
     },
     [confirmFullContext, settings.context, updateSettings],
@@ -329,7 +345,10 @@ export function App() {
               moves={moves}
               onJumpToMove={handleJumpToMove}
               structuralQuery={structuralQuery}
+              structuralAvailable={structural.available}
+              fileModes={fileModes}
               onStructuralResult={handleStructuralResult}
+              onToggleStructural={handleToggleStructural}
               viewedFiles={viewedFiles}
               binaryFiles={binaryFileMap}
               onViewedChange={handleViewedChange}

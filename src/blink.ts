@@ -25,6 +25,16 @@ export function parseAutoBlink(raw: unknown): AutoBlink {
   return AUTO_BLINK_OPTIONS.find((option) => option === raw) ?? DEFAULT_AUTO_BLINK
 }
 
+/**
+ * The mode one file takes when its structural switch is pressed.
+ *
+ * `null` gives the file back to the toolbar, which the switch never changes.
+ */
+export function toggledFileMode(current: ViewMode, global: ViewMode): ViewMode | null {
+  if (current !== 'structural') return 'structural'
+  return global === 'structural' ? 'unified' : null
+}
+
 export function toggleBlink(state: BlinkState): BlinkState {
   return state === 'before' ? 'after' : 'before'
 }

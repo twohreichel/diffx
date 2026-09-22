@@ -20,7 +20,10 @@ interface DiffViewerProps {
   moves: MovePair[]
   onJumpToMove: (run: MoveRun) => void
   structuralQuery: StructuralQuery
+  structuralAvailable: boolean
+  fileModes: Map<string, ViewMode>
   onStructuralResult: (filePath: string, unchanged: boolean) => void
+  onToggleStructural: (filePath: string) => void
   viewedFiles: Set<string>
   binaryFiles: Map<string, BinaryFileInfo>
   onViewedChange: (filePath: string, viewed: boolean) => void
@@ -42,7 +45,10 @@ export const DiffViewer = memo(function DiffViewer({
   moves,
   onJumpToMove,
   structuralQuery,
+  structuralAvailable,
+  fileModes,
   onStructuralResult,
+  onToggleStructural,
   viewedFiles,
   binaryFiles,
   onViewedChange,
@@ -78,6 +84,8 @@ export const DiffViewer = memo(function DiffViewer({
     <div className="diff-viewer">
       {sortedFiles.map((file, index) => {
         const filePath = file.name
+        // A per-file switch never touches the toolbar, which stays the default.
+        const mode = fileModes.get(filePath) ?? diffStyle
         const binaryInfo = binaryFiles.get(filePath)
         if (binaryInfo) {
           return (
@@ -86,7 +94,7 @@ export const DiffViewer = memo(function DiffViewer({
               filePath={filePath}
               info={binaryInfo}
               viewed={viewedFiles.has(filePath)}
-              blinkState={diffStyle === 'blink' ? blinkState : null}
+              blinkState={mode === 'blink' ? blinkState : null}
               onViewedChange={onViewedChange}
             />
           )
@@ -106,8 +114,10 @@ export const DiffViewer = memo(function DiffViewer({
             moves={moves}
             onJumpToMove={onJumpToMove}
             structuralQuery={structuralQuery}
+            structuralAvailable={structuralAvailable}
             onStructuralResult={onStructuralResult}
-            diffStyle={diffStyle}
+            onToggleStructural={onToggleStructural}
+            diffStyle={mode}
             blinkState={blinkState}
             lineDiff={lineDiff}
             tabSize={tabSizeMap[filePath] ?? defaultTabSize}

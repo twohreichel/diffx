@@ -54,7 +54,9 @@ interface FileDiffCardProps {
   moves: MovePair[]
   onJumpToMove: (run: MoveRun) => void
   structuralQuery: StructuralQuery
+  structuralAvailable: boolean
   onStructuralResult: (filePath: string, unchanged: boolean) => void
+  onToggleStructural: (filePath: string) => void
   diffStyle: ViewMode
   blinkState: BlinkState
   lineDiff: LineDiffMode
@@ -74,7 +76,9 @@ export const FileDiffCard = memo(function FileDiffCard({
   moves,
   onJumpToMove,
   structuralQuery,
+  structuralAvailable,
   onStructuralResult,
+  onToggleStructural,
   diffStyle,
   blinkState,
   lineDiff,
@@ -186,6 +190,22 @@ export const FileDiffCard = memo(function FileDiffCard({
             lineAnnotations={allAnnotations}
             renderHeaderMetadata={() => (
               <>
+                {structuralAvailable && (
+                  <button
+                    className="btn btn-sm structural-toggle"
+                    title={
+                      diffStyle === 'structural'
+                        ? 'Show the line-based rows for this file'
+                        : 'Compare this file structurally, leaving the other files as they are'
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onToggleStructural(filePath)
+                    }}
+                  >
+                    {diffStyle === 'structural' ? 'Lines' : 'Structural'}
+                  </button>
+                )}
                 {hidden.length > 0 && (
                   <span
                     className="hidden-comment-badge"

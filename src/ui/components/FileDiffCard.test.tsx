@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { FileDiffMetadata } from '@pierre/diffs'
 import { blinkCSS } from '../../blink'
 import { movesCSS, type MovePair } from '../../moves'
@@ -13,10 +14,11 @@ vi.mock('@pierre/diffs/react', () => ({
   FileDiff: (props: {
     options: Record<string, unknown>
     lineAnnotations: { lineNumber: number; metadata: unknown }[]
+    renderHeaderMetadata: () => React.ReactNode
   }) => {
     captured.options = props.options
     captured.annotations = props.lineAnnotations
-    return <div data-testid="file-diff" />
+    return <div data-testid="file-diff">{props.renderHeaderMetadata()}</div>
   },
 }))
 
@@ -43,6 +45,8 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
       onJumpToMove={vi.fn()}
       structuralQuery={{ staged: true, untracked: true, ignoreComments: false }}
       onStructuralResult={vi.fn()}
+      structuralAvailable={true}
+      onToggleStructural={vi.fn()}
       diffStyle="split"
       blinkState="after"
       lineDiff="word"
@@ -201,5 +205,25 @@ describe('FileDiffCard structural mode', () => {
     expect(await screen.findByText(/could not be read/)).toBeInTheDocument()
     expect(captured.options!.diffStyle).toBe('unified')
     expect(captured.options!.unsafeCSS as string).not.toContain('data-line-type')
+  })
+})
+
+describe('FileDiffCard per-file mode', () => {
+  it('offers to compare one file structurally', async () => {
+    const onToggleStructural = vi.fn()
+    renderCard({ fileDiff: withOids, onToggleStructural })
+    await userEvent.click(screen.getByRole('button', { name: 'Structural' }))
+    expect(onToggleStructural).toHaveBeenCalledWith('src/app.ts')
+  })
+
+  it('offers the way back for a file that is already compared structurally', async () => {
+    serve({ available: true, result: changed })
+    renderCard({ fileDiff: withOids, diffStyle: 'structural' })
+    expect(await screen.findByRole('button', { name: 'Lines' })).toBeInTheDocument()
+  })
+
+  it('withholds the switch where difftastic cannot be asked', () => {
+    renderCard({ fileDiff: withOids, structuralAvailable: false })
+    expect(screen.queryByRole('button', { name: 'Structural' })).toBeNull()
   })
 })

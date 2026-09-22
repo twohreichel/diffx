@@ -13,6 +13,7 @@ import {
   rendererDiffStyle,
   stepRegion,
   toggleBlink,
+  toggledFileMode,
 } from './blink'
 
 // One modification, one pure addition, one pure deletion.
@@ -63,6 +64,21 @@ describe('view mode', () => {
     for (const raw of [undefined, null, '', 'flicker', 7]) {
       expect(parseViewMode(raw)).toBe('split')
     }
+  })
+})
+
+describe('per-file mode', () => {
+  it('compares one file structurally while the others stay as they are', () => {
+    expect(toggledFileMode('split', 'split')).toBe('structural')
+    expect(toggledFileMode('unified', 'unified')).toBe('structural')
+  })
+
+  it('hands the file back to the toolbar when the switch is pressed again', () => {
+    expect(toggledFileMode('structural', 'split')).toBeNull()
+  })
+
+  it('drops the file to the line-based rows when structural is the default', () => {
+    expect(toggledFileMode('structural', 'structural')).toBe('unified')
   })
 })
 
