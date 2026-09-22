@@ -20,9 +20,16 @@ would be strictly worse. The fork's contribution is the **rendering**, not the d
 
 ## Server side
 
+Tested against **difftastic 0.71.0** (`cargo install difftastic --locked`).
+
 ```
-difft --display json --missing-as-empty [--ignore-comments] OLD_PATH NEW_PATH
+DFT_UNSTABLE=yes difft --display json --width 120 [--ignore-comments] OLD_PATH NEW_PATH
 ```
+
+0.71.0 gates `--display json` behind `DFT_UNSTABLE=yes` and has no
+`--missing-as-empty` flag, so an added or deleted side is written as an empty
+temp file instead. `--width` is pinned so the result does not follow the
+server's terminal size.
 
 Old and new content must exist as files. Write the old blob
 (`git show <rev>:<path>`) to a temp file; the new side is the working-tree file, or
@@ -59,12 +66,18 @@ parseDifft(json: unknown): StructuralFile   // throws ShapeError -> fallback
 
 ## Rendering
 
-Reuse feature 002's `applyRanges` to paint character ranges onto Shiki spans. That
-is the point of building 002 first: structural mode needs the same primitive, and
-it exists once.
+Granularity is **row-level, not character-level**. `@pierre/diffs` renders into its
+own shadow root and exposes no API for decorating character ranges, and feature 002
+produced no `applyRanges` primitive to reuse, so painting Shiki spans is out of
+reach without forking the renderer itself.
 
-Layout follows difftastic's two-column semantics, but implemented with diffx's own
-grid so navigation, comments and the file tree keep working.
+`structuralCSS` therefore neutralizes the background of every change row and
+restores the package's own addition and deletion colours on exactly the lines
+difftastic reports. A pure reformat keeps its `+`/`-` rows and shows all of them
+unhighlighted, which is the comprehension gain FR-006 asks for.
+
+Layout stays the package's own split grid, so navigation, comments and the file
+tree keep working.
 
 ## Caching
 
@@ -78,7 +91,7 @@ analysis is expensive and the same file is reopened constantly during review.
 - Unit: availability detection maps a missing binary to the right reason.
 - Unit: temp-file lifecycle cleans up on both success and error paths.
 - Integration (skipped when `difft` is absent): reformat-only fixture reports
-  `unchanged: true`; wrapped-block fixture marks only the wrapper.
+  `unchanged: true`, wrapped-block fixture marks only the wrapper.
 - DOM: unsupported language shows the fallback notice and line-based rows.
 
 ## Risks

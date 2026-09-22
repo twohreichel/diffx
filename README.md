@@ -10,6 +10,22 @@ A local code review tool designed for the coding agent workflow. Review AI-gener
 npm install -g diffx-cli
 ```
 
+### Optional: difftastic
+
+The **Structural** view mode compares syntax trees instead of lines, so a pure
+reformat shows no change. It shells out to [difftastic](https://difftastic.wilfred.me.uk/)
+and is disabled with a tooltip while that binary is missing — every other mode
+works without it.
+
+```bash
+brew install difftastic          # macOS, Homebrew
+cargo install difftastic         # any platform with a Rust toolchain
+sudo apt install difftastic      # Debian, Ubuntu
+sudo pacman -S difftastic        # Arch
+```
+
+Tested against difftastic 0.71.0.
+
 ## Usage
 
 Run in any git repository:
