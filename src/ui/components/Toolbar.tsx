@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { GitBranch, Settings } from 'lucide-react'
+import { GitBranch, Map as MapIcon, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
@@ -74,6 +74,8 @@ interface ToolbarProps {
   onSoftWrapChange: (softWrap: boolean) => void
   onBrowserChange: (browser: string) => void
   onCopyComments: () => Promise<void>
+  mapOpen: boolean
+  onToggleMap: () => void
 }
 
 export function Toolbar({
@@ -110,6 +112,8 @@ export function Toolbar({
   onSoftWrapChange,
   onBrowserChange,
   onCopyComments,
+  mapOpen,
+  onToggleMap,
 }: ToolbarProps) {
   const [copied, setCopied] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -201,6 +205,14 @@ export function Toolbar({
             ))}
           </div>
         </div>
+        <button
+          className={`btn btn-sm ${mapOpen ? 'btn-active' : ''}`}
+          title="Change map"
+          aria-pressed={mapOpen}
+          onClick={onToggleMap}
+        >
+          <MapIcon size={14} />
+        </button>
         <div className="settings-wrapper" ref={settingsRef}>
           <button
             className={`btn btn-sm settings-btn ${settingsOpen ? 'btn-active' : ''}`}

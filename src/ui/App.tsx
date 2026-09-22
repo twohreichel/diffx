@@ -7,6 +7,7 @@ import type { ReviewComment } from '../types'
 import { FULL_CONTEXT_LINE_CAP, estimateTotalLines, stepContext, type ContextWidth } from '../context'
 import { changeRegions, toggledFileMode, type ViewMode } from '../blink'
 import type { MoveRun } from '../moves'
+import { filterChangeMap, type MapFilter, type SymbolEntry } from '../map/buildChangeMap'
 import { useDiff } from './hooks/useDiff'
 import { useComments } from './hooks/useComments'
 import { useSettings } from './hooks/useSettings'
@@ -16,10 +17,12 @@ import { useShortcuts } from './hooks/useShortcuts'
 import { useScrollAnchor } from './hooks/useScrollAnchor'
 import { useBlink, usePrefersReducedMotion } from './hooks/useBlink'
 import { useMoves } from './hooks/useMoves'
-import { jumpToMove } from './moveJump'
+import { useChangeMap } from './hooks/useChangeMap'
+import { entryTarget, jumpToMove } from './moveJump'
 import { Toolbar } from './components/Toolbar'
 import { DiffViewer } from './components/DiffViewer'
 import { FileTree } from './components/FileTree'
+import { ChangeMap } from './components/ChangeMap'
 import { CommentTracker } from './components/CommentTracker'
 import { SidebarStorage } from './sidebarStorage'
 
@@ -198,6 +201,37 @@ export function App() {
     jumpToMove(run)
   }, [])
 
+  const mapFilter = useMemo<MapFilter>(
+    () => ({ tag: settings.mapTag, path: settings.mapPath }),
+    [settings.mapTag, settings.mapPath],
+  )
+  const mapGroups = useChangeMap(files, { moves, structurallyUnchanged })
+  const visibleGroups = useMemo(() => filterChangeMap(mapGroups, mapFilter), [mapGroups, mapFilter])
+
+  // The tree follows the map's filters (FR-006), but only once the map exists.
+  const treeFiles = useMemo(() => {
+    if (!settings.mapOpen || mapGroups.length === 0) return files
+    const kept = new Set(visibleGroups.map((group) => group.path))
+    return files.filter((file) => kept.has(file.name))
+  }, [files, mapGroups, settings.mapOpen, visibleGroups])
+
+  const handleMapFilterChange = useCallback(
+    (patch: Partial<MapFilter>) => {
+      if (patch.tag !== undefined) updateSettings({ mapTag: patch.tag })
+      if (patch.path !== undefined) updateSettings({ mapPath: patch.path })
+    },
+    [updateSettings],
+  )
+
+  const handleMapSelect = useCallback((entry: SymbolEntry) => {
+    setActiveFile(entry.file)
+    jumpToMove(entryTarget(entry))
+  }, [])
+
+  const toggleMap = useCallback(() => {
+    updateSettings({ mapOpen: !settings.mapOpen })
+  }, [settings.mapOpen, updateSettings])
+
   const confirmFullContext = useCallback(() => {
     const lines = estimateTotalLines(files)
     return lines <= FULL_CONTEXT_LINE_CAP || window.confirm(`Full context spans at least ${lines} lines. Render it?`)
@@ -226,6 +260,7 @@ export function App() {
   useShortcuts({
     '[': () => !contextDisabled && handleContextChange(stepContext(settings.context, -1)),
     ']': () => !contextDisabled && handleContextChange(stepContext(settings.context, 1)),
+    m: toggleMap,
   })
 
   const handleFileClick = useCallback((filePath: string) => {
@@ -243,7 +278,7 @@ export function App() {
   const sidebarContent = (
     <div className="sidebar-content">
       <FileTree
-        files={files}
+        files={treeFiles}
         activeFile={activeFile}
         commentCounts={commentCounts}
         viewedFiles={viewedFiles}
@@ -309,6 +344,8 @@ export function App() {
         onSoftWrapChange={(softWrap) => updateSettings({ softWrap })}
         onBrowserChange={(browser) => updateSettings({ browser })}
         onCopyComments={copyAllComments}
+        mapOpen={settings.mapOpen}
+        onToggleMap={toggleMap}
       />
       <div className="app-body">
         {sidebar.collapsed ? (
@@ -358,6 +395,15 @@ export function App() {
             />
           </Virtualizer>
         </main>
+        {settings.mapOpen && (
+          <ChangeMap
+            groups={visibleGroups}
+            filter={mapFilter}
+            onFilterChange={handleMapFilterChange}
+            onSelect={handleMapSelect}
+            onClose={toggleMap}
+          />
+        )}
       </div>
     </div>
   )

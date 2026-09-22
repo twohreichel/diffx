@@ -1169,3 +1169,200 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Change map */
+.cm {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+.cm-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.cm-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.cm-close {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.cm-close:hover {
+    color: var(--text);
+}
+
+.cm-filters {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cm-filter-path {
+    flex: 1;
+    min-width: 0;
+}
+
+.cm-filter-path,
+.cm-filter-tag {
+    padding: 3px 6px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.cm-empty,
+.cm-notice {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.cm-list,
+.cm-entries {
+    list-style: none;
+    overflow-y: auto;
+}
+
+.cm-list {
+    flex: 1;
+    min-height: 0;
+}
+
+.cm-group {
+    border-bottom: 1px solid var(--border);
+}
+
+.cm-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.cm-file-path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: rtl;
+    text-align: left;
+}
+
+.cm-file-counts {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.cm-entry-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 12px 4px 20px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.cm-entry-button:hover {
+    background: var(--bg);
+}
+
+.cm-kind {
+    flex-shrink: 0;
+    width: 44px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.cm-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cm-added {
+    color: var(--success);
+}
+
+.cm-removed {
+    color: var(--danger);
+}
+
+.cm-bar {
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+}
+
+.cm-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--primary);
+}
+
+.cm-tags {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.cm-tag {
+    padding: 0 4px;
+    font-size: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.cm-tag-moved {
+    color: var(--move);
+    border-color: var(--move);
+}
+
+.cm-tag-added {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.cm-tag-removed {
+    color: var(--danger);
+    border-color: var(--danger);
+}

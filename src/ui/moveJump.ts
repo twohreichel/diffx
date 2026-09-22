@@ -1,4 +1,21 @@
-import type { MoveRun } from '../moves'
+import type { MoveSide } from '../moves'
+import type { SymbolEntry } from '../map/buildChangeMap'
+
+/** The one row a jump aims at. */
+export interface JumpTarget {
+  path: string
+  side: MoveSide
+  startLine: number
+}
+
+/** A changed symbol is reached on the side that carries its first changed line. */
+export function entryTarget(entry: SymbolEntry): JumpTarget {
+  return {
+    path: entry.file,
+    side: entry.added > 0 ? 'additions' : 'deletions',
+    startLine: entry.firstChangedLine,
+  }
+}
 
 function shadowHost(card: Element): Element | undefined {
   return [...card.querySelectorAll('*')].find((element) => element.shadowRoot !== null)
@@ -10,7 +27,7 @@ function shadowHost(card: Element): Element | undefined {
  * Falls back to the file header while the row is outside the rendered window,
  * which the virtualizer keeps small. Returns false when the file is not on the page.
  */
-export function jumpToMove(run: MoveRun): boolean {
+export function jumpToMove(run: JumpTarget): boolean {
   const card = document.getElementById(`file-${run.path}`)
   if (!card) return false
   const shadow = shadowHost(card)?.shadowRoot

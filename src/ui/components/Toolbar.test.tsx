@@ -48,6 +48,8 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       onSoftWrapChange={vi.fn()}
       onBrowserChange={vi.fn()}
       onCopyComments={vi.fn()}
+      mapOpen={false}
+      onToggleMap={vi.fn()}
       {...overrides}
     />,
   )
@@ -231,5 +233,19 @@ describe('Toolbar structural mode', () => {
     const button = screen.getByRole('button', { name: 'Structural' })
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('title', missing.reason)
+  })
+})
+
+describe('Toolbar change map control', () => {
+  it('reports a request to open the map', async () => {
+    const onToggleMap = vi.fn()
+    renderToolbar({ onToggleMap })
+    await userEvent.click(screen.getByRole('button', { name: 'Change map' }))
+    expect(onToggleMap).toHaveBeenCalled()
+  })
+
+  it('marks an open map for assistive technology, not by colour alone', () => {
+    renderToolbar({ mapOpen: true })
+    expect(screen.getByRole('button', { name: 'Change map' })).toHaveAttribute('aria-pressed', 'true')
   })
 })
