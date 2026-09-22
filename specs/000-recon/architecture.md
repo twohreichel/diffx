@@ -85,7 +85,7 @@ FileDiffMetadata[]   (isPartial: false — whole file, enables context expansion
 | `<recon:VIEW_TOGGLE>` | `src/ui/components/Toolbar.tsx` (buttons) → `settings.diffStyle` → `src/ui/components/FileDiffCard.tsx` `options.diffStyle` | The toggle is diffx's; the branch it drives is the dependency's. |
 | `<recon:RENDER_SPLIT>` | `@pierre/diffs/react:FileDiff` with `options.diffStyle: 'split'` | Not a diffx module. |
 | `<recon:RENDER_UNIFIED>` | `@pierre/diffs/react:FileDiff` with `options.diffStyle: 'unified'` | Not a diffx module. A third value `'both'` exists and is unused by diffx. |
-| `<recon:HIGHLIGHT>` | `@pierre/diffs` internal Shiki integration; configured in `src/ui/components/FileDiffCard.tsx` via `options.theme` / `options.themeType` | Themes `github-dark` / `github-light`, `themeType: 'system'`. Tokenization happens inside the component, per line, in a worker. **Shiki spans are inside a shadow root and are not reachable from diffx code.** |
+| `<recon:HIGHLIGHT>` | `@pierre/diffs` internal Shiki integration; configured in `src/ui/components/FileDiffCard.tsx` via `options.theme` / `options.themeType` | Themes `github-dark` / `github-light`, `themeType: 'system'`. Tokenization happens inside the component, per line, in a worker. Shiki spans live inside an **open** shadow root: unreachable for outer CSS, reachable for JS via `host.shadowRoot`. |
 | `<recon:SETTINGS>` | server: `src/settings.ts:loadSettings` / `saveSettings`; client: `src/ui/hooks/useSettings.ts:useSettings` | File `~/.config/diffx/settings.json`. Shape below. A second, unrelated store is `src/ui/sidebarStorage.ts` on `localStorage` key `diffx-sidebar-preferences`. |
 | `<recon:KEYBIND>` | **does not exist** | There is no keyboard shortcut registration anywhere in `src/`. See "Keyboard shortcuts already taken". |
 | `<recon:FILETREE>` | `src/ui/components/FileTree.tsx:FileTree`; selection state is `activeFile` in `src/ui/App.tsx:App`, navigation is `App.tsx:handleFileClick` | Navigation is `document.getElementById('file-'+path).scrollIntoView()`. The id is set on the wrapper in `FileDiffCard`. |
@@ -201,9 +201,27 @@ options={{
 }}
 ```
 
-`unsafeCSS` with a `:host` selector confirms the Shadow DOM: this is the only
-supported way to reach inside. There is no way to walk or patch the rendered spans
-from diffx.
+`unsafeCSS` with a `:host` selector confirms the Shadow DOM: an outer stylesheet does
+not cross the boundary, so this is the only way to style the rendered rows.
+
+**JavaScript, however, does cross it.** The component calls
+`attachShadow({ mode: "open" })`, so `host.shadowRoot.querySelectorAll(...)` works
+from diffx code. The rendered rows carry a usable set of hooks:
+
+`data-file`, `data-line`, `data-line-index`, `data-line-number-content`,
+`data-line-type`, `data-diff-type`, `data-diff-span`, `data-separator`,
+`data-selected-line`, `data-annotation-slot`, `data-gutter-utility-slot`.
+
+Two constraints come with that access:
+
+- **The view is virtualized** (`data-buffer-size`, `data-dehydrated`). Only the rows
+  near the viewport exist in the DOM, so any query sees a window, and any decoration
+  has to be reapplied as the user scrolls — a `MutationObserver` on the shadow root,
+  not a one-time pass.
+- **It is not a published API.** These attributes can change in any release of the
+  dependency. Reading them to locate a row is cheap to repair. Building a feature's
+  correctness on them is not, so the pure logic of every feature stays independent of
+  the DOM and only its presentation layer touches these hooks.
 
 ### Options the dependency supports and diffx does not use
 
@@ -309,14 +327,16 @@ Node 22.17; Node 24 is what this work uses.
 | 001 Context slider | Plan's Design A holds for narrowing (`-U0`), but "widen" and "full" are better served client-side by `collapsedContextThreshold` / `expandUnchanged`, which cost no round trip. Server `-U<n>` still needed to go **below** git's default of 3. Cache key: none exists, nothing to extend. |
 | 002 Intra-line diff | **Already implemented in the dependency.** The feature collapses to exposing `lineDiffType` and `maxLineDiffLength` as a persisted setting plus a toggle. The plan's tokenizer, Myers diff, pairing and `applyRanges` are dead work — writing them would violate the Lazy-Senior Ladder rung 4. `applyRanges` therefore does **not** become available to feature 005, which must render its own view. |
 | 003 A/B Blink | Cannot be built inside `<FileDiff>`: the two-layer grid needs DOM diffx does not own. Needs a **fork-owned renderer**, fed by the full file contents `/api/file-versions` already returns and highlighted with the exported `codeToHtml`. Plan's Option 1 is the right source of data. Plan's "render both layers once" idea survives unchanged. |
-| 004 Moved blocks | Detection is pure over `FileDiffMetadata` and fully feasible, cross-file included. **Decorating existing rows is not possible** — no access to the shadow DOM. Render the result as a fork-owned panel plus navigation instead, and drop the in-row badge. |
+| 004 Moved blocks | Detection is pure over `FileDiffMetadata` and fully feasible, cross-file included. In-row badges are possible through the open shadow root, but cost a `MutationObserver` against the virtualizer and a dependency on unpublished attributes. Start with the fork-owned panel plus navigation, which needs neither, and add the badge only if the panel proves insufficient. |
 | 005 Structural diff | Server side (difft invocation, parsing, caching, availability) is unaffected and feasible. Rendering must be fork-owned, and cannot reuse feature 002's `applyRanges` because that module will not exist. |
 | 006 Change map | `hunk.hunkContext` carries git's enclosing symbol and is populated for real TypeScript files (verified in `sample-payload.json`). Option A is viable as planned. The panel is fork-owned, which is what the plan already assumed. |
 
 ## Risks for the view-mode features
 
-- **The dependency is the renderer.** Any feature that needs per-line DOM control
-  must bring its own renderer. That is the dominant cost driver in 003, 004 and 005.
+- **The dependency is the renderer.** A feature that needs a different row *layout*
+  must bring its own renderer — that is the cost driver in 003 and 005. A feature that
+  only needs to *annotate* existing rows can reach them through the open shadow root,
+  at the price of a `MutationObserver` and unpublished attribute names.
 - **`@pierre/diffs` is a devDependency**, not a dependency — it is bundled into the
   client at build time. A fork-owned renderer that imports `codeToHtml` inherits that
   arrangement and must not move into the server bundle.
