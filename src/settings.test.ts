@@ -51,6 +51,23 @@ describe('loadSettings', () => {
     expect(loadSettings().lineDiff).toBe('word')
   })
 
+  it('defaults the view mode to split and auto blink to off', () => {
+    const settings = loadSettings()
+    expect(settings.diffStyle).toBe('split')
+    expect(settings.autoBlink).toBe('off')
+  })
+
+  it('keeps a stored blink mode and interval, and rejects unknown ones', () => {
+    writeSettings({ diffStyle: 'blink', autoBlink: 1600 })
+    const settings = loadSettings()
+    expect(settings.diffStyle).toBe('blink')
+    expect(settings.autoBlink).toBe(1600)
+    writeSettings({ diffStyle: 'flicker', autoBlink: 250 })
+    const fallback = loadSettings()
+    expect(fallback.diffStyle).toBe('split')
+    expect(fallback.autoBlink).toBe('off')
+  })
+
   it('leaves the other settings untouched', () => {
     writeSettings({ diffStyle: 'unified', defaultTabSize: 2 })
     const settings = loadSettings()

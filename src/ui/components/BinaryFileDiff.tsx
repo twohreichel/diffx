@@ -1,4 +1,5 @@
 import type { BinaryFileInfo } from '../hooks/useDiff'
+import type { BlinkState } from '../../blink'
 
 const IMAGE_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg', '.ico', '.avif',
@@ -13,10 +14,12 @@ interface BinaryFileDiffProps {
   filePath: string
   info: BinaryFileInfo
   viewed: boolean
+  /** The state Blink is showing, or null while another mode is on screen. */
+  blinkState: BlinkState | null
   onViewedChange: (filePath: string, viewed: boolean) => void
 }
 
-export function BinaryFileDiff({ filePath, info, viewed, onViewedChange }: BinaryFileDiffProps) {
+export function BinaryFileDiff({ filePath, info, viewed, blinkState, onViewedChange }: BinaryFileDiffProps) {
   const image = isImage(filePath)
 
   return (
@@ -35,7 +38,7 @@ export function BinaryFileDiff({ filePath, info, viewed, onViewedChange }: Binar
       {!viewed && (
         <div className="binary-diff-body">
           {image ? (
-            <ImagePreview filePath={filePath} changeType={info.type} />
+            <ImagePreview filePath={filePath} changeType={info.type} blinkState={blinkState} />
           ) : (
             <div className="binary-diff-message">
               Binary file {info.type === 'added' ? 'added' : info.type === 'untracked' ? 'untracked' : info.type === 'deleted' ? 'deleted' : 'changed'}
@@ -47,7 +50,15 @@ export function BinaryFileDiff({ filePath, info, viewed, onViewedChange }: Binar
   )
 }
 
-function ImagePreview({ filePath, changeType }: { filePath: string; changeType: BinaryFileInfo['type'] }) {
+function ImagePreview({
+  filePath,
+  changeType,
+  blinkState,
+}: {
+  filePath: string
+  changeType: BinaryFileInfo['type']
+  blinkState: BlinkState | null
+}) {
   const oldSrc = `/api/file-content?path=${encodeURIComponent(filePath)}&version=old`
   const newSrc = `/api/file-content?path=${encodeURIComponent(filePath)}&version=new`
 
@@ -68,6 +79,21 @@ function ImagePreview({ filePath, changeType }: { filePath: string; changeType: 
         <div className="image-preview-panel">
           <div className="image-preview-label image-preview-label-deleted">Deleted</div>
           <img src={oldSrc} alt={filePath} className="image-preview-img image-preview-deleted" />
+        </div>
+      </div>
+    )
+  }
+
+  if (blinkState) {
+    return (
+      <div className="image-preview">
+        <div className="image-preview-panel">
+          <div className="image-preview-label">{blinkState === 'before' ? 'Before' : 'After'}</div>
+          <img
+            src={blinkState === 'before' ? oldSrc : newSrc}
+            alt={`${filePath} (${blinkState})`}
+            className="image-preview-img"
+          />
         </div>
       </div>
     )

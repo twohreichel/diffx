@@ -6,6 +6,7 @@ import { CommentForm } from './CommentForm'
 import { CommentBubble } from './CommentBubble'
 import { hiddenAnnotations } from '../hiddenComments'
 import { MAX_LINE_DIFF_LENGTH, lineDiffType, type LineDiffMode } from '../../lineDiff'
+import { blinkCSS, rendererDiffStyle, type BlinkState, type ViewMode } from '../../blink'
 
 interface PendingComment {
   side: AnnotationSide
@@ -17,7 +18,8 @@ interface FileDiffCardProps {
   fileDiff: FileDiffMetadata
   filePath: string
   annotations: DiffLineAnnotation<ReviewComment>[]
-  diffStyle: 'split' | 'unified'
+  diffStyle: ViewMode
+  blinkState: BlinkState
   lineDiff: LineDiffMode
   tabSize: number
   softWrap: boolean
@@ -33,6 +35,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   filePath,
   annotations,
   diffStyle,
+  blinkState,
   lineDiff,
   tabSize,
   softWrap,
@@ -44,6 +47,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   const [pending, setPending] = useState<PendingComment | null>(null)
 
   const hidden = hiddenAnnotations(fileDiff, annotations)
+  const blink = diffStyle === 'blink'
 
   const getLineContent = (side: AnnotationSide, lineNumber: number): string => {
     const lines = side === 'additions' ? fileDiff.additionLines : fileDiff.deletionLines
@@ -98,18 +102,22 @@ export const FileDiffCard = memo(function FileDiffCard({
           <FileDiff<ReviewComment | { _pending: true }>
             fileDiff={fileDiff}
             options={{
-              diffStyle,
+              diffStyle: rendererDiffStyle(diffStyle),
               stickyHeader: true,
               expansionLineCount: 20,
               enableGutterUtility: true,
               theme: { dark: 'github-dark', light: 'github-light' },
               themeType: 'system',
-              overflow: softWrap ? 'wrap' : 'scroll',
+              // Wrapped split columns share one grid through `display: contents`,
+              // so hiding a column there would collapse the layout.
+              overflow: softWrap && !blink ? 'wrap' : 'scroll',
               lineDiffType: lineDiffType(lineDiff),
               maxLineDiffLength: MAX_LINE_DIFF_LENGTH,
               // The renderer marks intra-line segments by background alone. The
               // underline adds the second, non-colour cue Constitution IX asks for.
-              unsafeCSS: `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }`,
+              unsafeCSS:
+                `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
+                (blink ? blinkCSS(blinkState) : ''),
             }}
             lineAnnotations={allAnnotations}
             renderHeaderMetadata={() => (

@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import type { FileDiffMetadata } from '@pierre/diffs'
+import { blinkCSS } from '../../blink'
 
 const captured: { options?: Record<string, unknown> } = {}
 
@@ -32,6 +33,7 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
       filePath="src/app.ts"
       annotations={[]}
       diffStyle="split"
+      blinkState="after"
       lineDiff="word"
       tabSize={4}
       softWrap={false}
@@ -68,5 +70,26 @@ describe('FileDiffCard intra-line options', () => {
 
   it('carries the emphasis by an underline as well as a background', () => {
     expect(renderCard().unsafeCSS).toMatch(/\[data-diff-span\][^}]*border-bottom/)
+  })
+})
+
+describe('FileDiffCard blink options', () => {
+  it('renders blink through the split renderer', () => {
+    expect(renderCard({ diffStyle: 'blink' }).diffStyle).toBe('split')
+  })
+
+  it('leaves one state of the split grid on screen', () => {
+    const css = renderCard({ diffStyle: 'blink', blinkState: 'before' }).unsafeCSS as string
+    expect(css).toContain(blinkCSS('before'))
+  })
+
+  it('adds nothing to the other modes', () => {
+    const css = renderCard({ diffStyle: 'split', blinkState: 'before' }).unsafeCSS as string
+    expect(css).not.toContain('display:none')
+  })
+
+  it('ignores soft wrap, which the hidden column cannot survive', () => {
+    expect(renderCard({ diffStyle: 'blink', softWrap: true }).overflow).toBe('scroll')
+    expect(renderCard({ diffStyle: 'split', softWrap: true }).overflow).toBe('wrap')
   })
 })

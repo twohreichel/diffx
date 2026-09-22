@@ -3,6 +3,14 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { DEFAULT_CONTEXT, parseContextWidth, type ContextWidth } from './context.js'
 import { DEFAULT_LINE_DIFF, parseLineDiffMode, type LineDiffMode } from './lineDiff.js'
+import {
+  DEFAULT_AUTO_BLINK,
+  DEFAULT_VIEW_MODE,
+  parseAutoBlink,
+  parseViewMode,
+  type AutoBlink,
+  type ViewMode,
+} from './blink.js'
 
 const CONFIG_DIR = join(homedir(), '.config', 'diffx')
 const SETTINGS_FILE = join(CONFIG_DIR, 'settings.json')
@@ -10,20 +18,22 @@ const SETTINGS_FILE = join(CONFIG_DIR, 'settings.json')
 export interface Settings {
   staged: boolean
   untracked: boolean
-  diffStyle: 'split' | 'unified'
+  diffStyle: ViewMode
   defaultTabSize: number
   context: ContextWidth
   lineDiff: LineDiffMode
+  autoBlink: AutoBlink
   browser?: string
 }
 
 const DEFAULTS: Settings = {
   staged: true,
   untracked: true,
-  diffStyle: 'split',
+  diffStyle: DEFAULT_VIEW_MODE,
   defaultTabSize: 4,
   context: DEFAULT_CONTEXT,
   lineDiff: DEFAULT_LINE_DIFF,
+  autoBlink: DEFAULT_AUTO_BLINK,
 }
 
 export function loadSettings(): Settings {
@@ -35,6 +45,8 @@ export function loadSettings(): Settings {
       ...stored,
       context: parseContextWidth(stored.context),
       lineDiff: parseLineDiffMode(stored.lineDiff),
+      diffStyle: parseViewMode(stored.diffStyle),
+      autoBlink: parseAutoBlink(stored.autoBlink),
     }
   } catch {
     return { ...DEFAULTS }

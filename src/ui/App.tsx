@@ -5,6 +5,7 @@ import { Virtualizer } from '@pierre/diffs/react'
 import type { FileDiffMetadata } from '@pierre/diffs'
 import type { ReviewComment } from '../types'
 import { FULL_CONTEXT_LINE_CAP, estimateTotalLines, stepContext, type ContextWidth } from '../context'
+import { changeRegions, type ViewMode } from '../blink'
 import { useDiff } from './hooks/useDiff'
 import { useComments } from './hooks/useComments'
 import { useSettings } from './hooks/useSettings'
@@ -12,6 +13,7 @@ import { useViewed } from './hooks/useViewed'
 import { useFullDiffs, fileKey } from './hooks/useFullDiffs'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useScrollAnchor } from './hooks/useScrollAnchor'
+import { useBlink, usePrefersReducedMotion } from './hooks/useBlink'
 import { Toolbar } from './components/Toolbar'
 import { DiffViewer } from './components/DiffViewer'
 import { FileTree } from './components/FileTree'
@@ -34,10 +36,12 @@ function useWindowSize({ factor }: { factor: number }) {
 
 export function App() {
   const { settings, loaded, updateSettings } = useSettings()
+  const blinkMode = settings.diffStyle === 'blink'
   const { patch, repoName, branch, customMode, binaryFiles, tabSizeMap, untrackedFiles, loading, error } = useDiff({
     staged: settings.staged,
     untracked: settings.untracked,
-    context: settings.context,
+    // Blink shows one complete state at a time, which only full context provides.
+    context: blinkMode ? 'full' : settings.context,
   })
   const { comments, addComment, removeComment, copyAllComments } =
     useComments()
@@ -146,21 +150,36 @@ export function App() {
 
   const { capture } = useScrollAnchor(patch)
 
+  const regions = useMemo(() => changeRegions(files), [files])
+  const reducedMotion = usePrefersReducedMotion()
+  const { blinkState } = useBlink({
+    enabled: blinkMode,
+    regions,
+    autoBlink: settings.autoBlink,
+    reducedMotion,
+  })
+
+  const confirmFullContext = useCallback(() => {
+    const lines = estimateTotalLines(files)
+    return lines <= FULL_CONTEXT_LINE_CAP || window.confirm(`Full context spans at least ${lines} lines. Render it?`)
+  }, [files])
+
   const handleContextChange = useCallback(
     (next: ContextWidth) => {
-      if (next === 'full') {
-        const lines = estimateTotalLines(files)
-        if (
-          lines > FULL_CONTEXT_LINE_CAP &&
-          !window.confirm(`Full context spans at least ${lines} lines. Render it?`)
-        ) {
-          return
-        }
-      }
+      if (next === 'full' && !confirmFullContext()) return
       capture()
       updateSettings({ context: next })
     },
-    [capture, files, updateSettings],
+    [capture, confirmFullContext, updateSettings],
+  )
+
+  const handleDiffStyleChange = useCallback(
+    (next: ViewMode) => {
+      // Blink asks git for the whole file, so it meets the same size question.
+      if (next === 'blink' && settings.context !== 'full' && !confirmFullContext()) return
+      updateSettings({ diffStyle: next })
+    },
+    [confirmFullContext, settings.context, updateSettings],
   )
 
   useShortcuts({
@@ -225,14 +244,18 @@ export function App() {
         diffOptions={{ staged: settings.staged, untracked: settings.untracked, context: settings.context }}
         context={settings.context}
         contextDisabled={contextDisabled}
+        blinkState={blinkState}
+        autoBlink={settings.autoBlink}
+        reducedMotion={reducedMotion}
         lineDiff={settings.lineDiff}
         defaultTabSize={settings.defaultTabSize}
         softWrap={settings.softWrap}
         browser={settings.browser}
         customMode={customMode}
-        onDiffStyleChange={(style) => updateSettings({ diffStyle: style })}
+        onDiffStyleChange={handleDiffStyleChange}
         onContextChange={handleContextChange}
         onLineDiffChange={(lineDiff) => updateSettings({ lineDiff })}
+        onAutoBlinkChange={(autoBlink) => updateSettings({ autoBlink })}
         onDiffOptionsChange={(options) => updateSettings(options)}
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}
         onSoftWrapChange={(softWrap) => updateSettings({ softWrap })}
@@ -261,11 +284,12 @@ export function App() {
             </aside>
           </Resizable>
         )}
-        <main className="main">
+        <main className={blinkMode ? `main blink-pane blink-pane-${blinkState}` : 'main'}>
           <Virtualizer className="main-scroll" contentClassName="main-content">
             <DiffViewer
               files={displayFiles}
               diffStyle={settings.diffStyle}
+              blinkState={blinkState}
               lineDiff={settings.lineDiff}
               tabSizeMap={tabSizeMap}
               defaultTabSize={settings.defaultTabSize}

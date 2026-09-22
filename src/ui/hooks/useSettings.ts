@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { DEFAULT_CONTEXT, type ContextWidth } from '../../context'
 import { DEFAULT_LINE_DIFF, type LineDiffMode } from '../../lineDiff'
+import { DEFAULT_AUTO_BLINK, DEFAULT_VIEW_MODE, type AutoBlink, type ViewMode } from '../../blink'
 
 export interface Settings {
   staged: boolean
   untracked: boolean
-  diffStyle: 'split' | 'unified'
+  diffStyle: ViewMode
   defaultTabSize: number
   context: ContextWidth
   lineDiff: LineDiffMode
+  autoBlink: AutoBlink
   softWrap: boolean
   browser?: string
 }
@@ -16,10 +18,11 @@ export interface Settings {
 const DEFAULTS: Settings = {
   staged: true,
   untracked: true,
-  diffStyle: 'split',
+  diffStyle: DEFAULT_VIEW_MODE,
   defaultTabSize: 4,
   context: DEFAULT_CONTEXT,
   lineDiff: DEFAULT_LINE_DIFF,
+  autoBlink: DEFAULT_AUTO_BLINK,
   softWrap: false,
 }
 

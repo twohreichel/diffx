@@ -3,12 +3,14 @@ import type { FileDiffMetadata, DiffLineAnnotation, AnnotationSide } from '@pier
 import type { ReviewComment } from '../../types'
 import type { BinaryFileInfo } from '../hooks/useDiff'
 import type { LineDiffMode } from '../../lineDiff'
+import type { BlinkState, ViewMode } from '../../blink'
 import { FileDiffCard } from './FileDiffCard'
 import { BinaryFileDiff } from './BinaryFileDiff'
 
 interface DiffViewerProps {
   files: FileDiffMetadata[]
-  diffStyle: 'split' | 'unified'
+  diffStyle: ViewMode
+  blinkState: BlinkState
   lineDiff: LineDiffMode
   tabSizeMap: Record<string, number>
   defaultTabSize: number
@@ -26,6 +28,7 @@ const emptyAnnotations: DiffLineAnnotation<ReviewComment>[] = []
 export const DiffViewer = memo(function DiffViewer({
   files,
   diffStyle,
+  blinkState,
   lineDiff,
   tabSizeMap,
   defaultTabSize,
@@ -73,6 +76,7 @@ export const DiffViewer = memo(function DiffViewer({
               filePath={filePath}
               info={binaryInfo}
               viewed={viewedFiles.has(filePath)}
+              blinkState={diffStyle === 'blink' ? blinkState : null}
               onViewedChange={onViewedChange}
             />
           )
@@ -90,6 +94,7 @@ export const DiffViewer = memo(function DiffViewer({
             filePath={filePath}
             annotations={fileAnnotationsMap.get(filePath) ?? emptyAnnotations}
             diffStyle={diffStyle}
+            blinkState={blinkState}
             lineDiff={lineDiff}
             tabSize={tabSizeMap[filePath] ?? defaultTabSize}
             softWrap={softWrap}

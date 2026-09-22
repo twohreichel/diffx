@@ -5,10 +5,13 @@ import userEvent from '@testing-library/user-event'
 import { Toolbar } from './Toolbar'
 import type { ContextWidth } from '../../context'
 import type { LineDiffMode } from '../../lineDiff'
+import type { AutoBlink, ViewMode } from '../../blink'
 
 function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
   const onContextChange = vi.fn()
   const onLineDiffChange = vi.fn()
+  const onDiffStyleChange = vi.fn()
+  const onAutoBlinkChange = vi.fn()
   render(
     <Toolbar
       repoName="diffx"
@@ -27,7 +30,11 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       onContextChange={onContextChange}
       lineDiff="word"
       onLineDiffChange={onLineDiffChange}
-      onDiffStyleChange={vi.fn()}
+      blinkState="after"
+      autoBlink="off"
+      reducedMotion={false}
+      onAutoBlinkChange={onAutoBlinkChange}
+      onDiffStyleChange={onDiffStyleChange}
       onDiffOptionsChange={vi.fn()}
       onDefaultTabSizeChange={vi.fn()}
       onSoftWrapChange={vi.fn()}
@@ -36,7 +43,7 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       {...overrides}
     />,
   )
-  return { onContextChange, onLineDiffChange }
+  return { onContextChange, onLineDiffChange, onDiffStyleChange, onAutoBlinkChange }
 }
 
 async function openSettings(): Promise<void> {
@@ -69,6 +76,12 @@ describe('Toolbar context control', () => {
     expect(onContextChange).toHaveBeenCalledWith<[ContextWidth]>(0)
     await userEvent.click(contextButton('full'))
     expect(onContextChange).toHaveBeenCalledWith<[ContextWidth]>('full')
+  })
+
+  it('disables the control in blink mode, which renders the whole file', () => {
+    renderToolbar({ diffStyle: 'blink' })
+    expect(contextButton('3')).toBeDisabled()
+    expect(screen.getByRole('group', { name: 'Context' }).getAttribute('title')).toMatch(/blink/i)
   })
 
   it('disables the control when context cannot apply, and says why', () => {
@@ -104,5 +117,49 @@ describe('Toolbar intra-line granularity', () => {
     await openSettings()
     await userEvent.selectOptions(screen.getByLabelText('Intra-line diff'), 'char')
     expect(onLineDiffChange).toHaveBeenCalledWith<[LineDiffMode]>('char')
+  })
+})
+
+describe('Toolbar blink mode', () => {
+  it('offers Blink beside Split and Unified', async () => {
+    const { onDiffStyleChange } = renderToolbar()
+    await userEvent.click(screen.getByRole('button', { name: 'Blink' }))
+    expect(onDiffStyleChange).toHaveBeenCalledWith<[ViewMode]>('blink')
+  })
+
+  it('names the state on screen, not by the pane colour alone', () => {
+    renderToolbar({ diffStyle: 'blink', blinkState: 'before' })
+    expect(screen.getByRole('status', { name: 'Blink state' })).toHaveTextContent('BEFORE')
+  })
+
+  it('says nothing about a state the other modes do not have', () => {
+    renderToolbar({ diffStyle: 'split' })
+    expect(screen.queryByRole('status', { name: 'Blink state' })).toBeNull()
+  })
+
+  it('offers off and the three auto-blink intervals', async () => {
+    renderToolbar({ diffStyle: 'blink' })
+    await openSettings()
+    const options = [...screen.getByLabelText('Auto blink').querySelectorAll('option')]
+    expect(options.map((option) => option.value)).toEqual(['off', '400', '800', '1600'])
+  })
+
+  it('reports the chosen interval as a number', async () => {
+    const { onAutoBlinkChange } = renderToolbar({ diffStyle: 'blink' })
+    await openSettings()
+    await userEvent.selectOptions(screen.getByLabelText('Auto blink'), '1600')
+    expect(onAutoBlinkChange).toHaveBeenCalledWith<[AutoBlink]>(1600)
+  })
+
+  it('withholds auto blink from a reader who asked for no motion', async () => {
+    renderToolbar({ diffStyle: 'blink', reducedMotion: true })
+    await openSettings()
+    expect(screen.queryByLabelText('Auto blink')).toBeNull()
+  })
+
+  it('withholds auto blink outside blink mode', async () => {
+    renderToolbar({ diffStyle: 'unified' })
+    await openSettings()
+    expect(screen.queryByLabelText('Auto blink')).toBeNull()
   })
 })

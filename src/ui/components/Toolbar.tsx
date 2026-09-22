@@ -3,6 +3,15 @@ import { GitBranch, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
+import { AUTO_BLINK_OPTIONS, parseAutoBlink, type AutoBlink, type BlinkState, type ViewMode } from '../../blink'
+
+const VIEW_MODE_LABELS: Record<ViewMode, string> = {
+  split: 'Split',
+  unified: 'Unified',
+  blink: 'Blink',
+}
+
+const BLINK_HINT = 'Space swaps before and after, n and p jump between changes'
 
 const LINE_DIFF_LABELS: Record<LineDiffMode, string> = {
   word: 'Word',
@@ -17,7 +26,10 @@ interface ToolbarProps {
   additions: number
   deletions: number
   commentCount: number
-  diffStyle: 'split' | 'unified'
+  diffStyle: ViewMode
+  blinkState: BlinkState
+  autoBlink: AutoBlink
+  reducedMotion: boolean
   context: ContextWidth
   contextDisabled: boolean
   lineDiff: LineDiffMode
@@ -26,7 +38,8 @@ interface ToolbarProps {
   softWrap: boolean
   browser?: string
   customMode: boolean
-  onDiffStyleChange: (style: 'split' | 'unified') => void
+  onDiffStyleChange: (style: ViewMode) => void
+  onAutoBlinkChange: (interval: AutoBlink) => void
   onContextChange: (context: ContextWidth) => void
   onLineDiffChange: (mode: LineDiffMode) => void
   onDiffOptionsChange: (options: DiffOptions) => void
@@ -44,6 +57,9 @@ export function Toolbar({
   deletions,
   commentCount,
   diffStyle,
+  blinkState,
+  autoBlink,
+  reducedMotion,
   context,
   contextDisabled,
   lineDiff,
@@ -53,6 +69,7 @@ export function Toolbar({
   browser,
   customMode,
   onDiffStyleChange,
+  onAutoBlinkChange,
   onContextChange,
   onLineDiffChange,
   onDiffOptionsChange,
@@ -101,27 +118,37 @@ export function Toolbar({
       </div>
       <div className="toolbar-right">
         <div className="toolbar-toggle">
-          <button
-            className={`btn btn-sm ${diffStyle === 'split' ? 'btn-active' : ''}`}
-            onClick={() => onDiffStyleChange('split')}
-          >
-            Split
-          </button>
-          <button
-            className={`btn btn-sm ${diffStyle === 'unified' ? 'btn-active' : ''}`}
-            onClick={() => onDiffStyleChange('unified')}
-          >
-            Unified
-          </button>
+          {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map((mode) => (
+            <button
+              key={mode}
+              className={`btn btn-sm ${diffStyle === mode ? 'btn-active' : ''}`}
+              title={mode === 'blink' ? BLINK_HINT : undefined}
+              onClick={() => onDiffStyleChange(mode)}
+            >
+              {VIEW_MODE_LABELS[mode]}
+            </button>
+          ))}
         </div>
+        {diffStyle === 'blink' && (
+          <span
+            className={`blink-state blink-state-${blinkState}`}
+            role="status"
+            aria-label="Blink state"
+            title={BLINK_HINT}
+          >
+            {blinkState === 'before' ? 'BEFORE' : 'AFTER'}
+          </span>
+        )}
         <div
           className="toolbar-context"
           role="group"
           aria-label="Context"
           title={
-            contextDisabled
-              ? 'Context does not apply: this diff contains only binary files'
-              : 'Lines of unchanged context around each change'
+            diffStyle === 'blink'
+              ? 'Blink renders the whole file, so context does not apply'
+              : contextDisabled
+                ? 'Context does not apply: this diff contains only binary files'
+                : 'Lines of unchanged context around each change'
           }
         >
           <span className="toolbar-context-label">Context</span>
@@ -132,7 +159,7 @@ export function Toolbar({
                 data-context={step}
                 className={`btn btn-sm ${context === step ? 'btn-active' : ''}`}
                 aria-pressed={context === step}
-                disabled={contextDisabled}
+                disabled={contextDisabled || diffStyle === 'blink'}
                 onClick={() => onContextChange(step)}
               >
                 {step === 'full' ? 'Full' : step}
@@ -197,6 +224,23 @@ export function Toolbar({
                   ))}
                 </select>
               </div>
+              {diffStyle === 'blink' && !reducedMotion && (
+                <div className="settings-item settings-item-spaced">
+                  <label htmlFor="auto-blink-select">Auto blink</label>
+                  <select
+                    id="auto-blink-select"
+                    className="settings-select"
+                    value={String(autoBlink)}
+                    onChange={(e) => onAutoBlinkChange(parseAutoBlink(Number(e.target.value) || 'off'))}
+                  >
+                    {AUTO_BLINK_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'off' ? 'Off' : `${option} ms`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="settings-item settings-item-spaced">
                 <span>Default tab size</span>
                 <select
