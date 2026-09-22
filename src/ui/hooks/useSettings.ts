@@ -3,6 +3,7 @@ import { DEFAULT_CONTEXT, type ContextWidth } from '../../context'
 import { DEFAULT_LINE_DIFF, type LineDiffMode } from '../../lineDiff'
 import { DEFAULT_AUTO_BLINK, DEFAULT_VIEW_MODE, type AutoBlink, type ViewMode } from '../../blink'
 import { DEFAULT_MOVE_SETTINGS } from '../../moves'
+import { DEFAULT_TAG_FILTER, type TagFilter } from '../../map/buildChangeMap'
 
 export interface Settings {
   staged: boolean
@@ -15,6 +16,9 @@ export interface Settings {
   moveMinLines: number
   moveSimilarity: number
   ignoreComments: boolean
+  mapOpen: boolean
+  mapTag: TagFilter
+  mapPath: string
   softWrap: boolean
   browser?: string
 }
@@ -30,6 +34,9 @@ const DEFAULTS: Settings = {
   moveMinLines: DEFAULT_MOVE_SETTINGS.minLines,
   moveSimilarity: DEFAULT_MOVE_SETTINGS.similarity,
   ignoreComments: false,
+  mapOpen: false,
+  mapTag: DEFAULT_TAG_FILTER,
+  mapPath: '',
   softWrap: false,
 }
 

@@ -12,6 +12,7 @@ import {
   type ViewMode,
 } from './blink.js'
 import { DEFAULT_MOVE_SETTINGS, parseMinLines, parseSimilarity } from './moves.js'
+import { DEFAULT_TAG_FILTER, parseTagFilter, type TagFilter } from './map/buildChangeMap.js'
 
 const CONFIG_DIR = join(homedir(), '.config', 'diffx')
 const SETTINGS_FILE = join(CONFIG_DIR, 'settings.json')
@@ -27,6 +28,9 @@ export interface Settings {
   moveMinLines: number
   moveSimilarity: number
   ignoreComments: boolean
+  mapOpen: boolean
+  mapTag: TagFilter
+  mapPath: string
   browser?: string
 }
 
@@ -41,6 +45,9 @@ const DEFAULTS: Settings = {
   moveMinLines: DEFAULT_MOVE_SETTINGS.minLines,
   moveSimilarity: DEFAULT_MOVE_SETTINGS.similarity,
   ignoreComments: false,
+  mapOpen: false,
+  mapTag: DEFAULT_TAG_FILTER,
+  mapPath: '',
 }
 
 export function loadSettings(): Settings {
@@ -56,6 +63,7 @@ export function loadSettings(): Settings {
       autoBlink: parseAutoBlink(stored.autoBlink),
       moveMinLines: parseMinLines(stored.moveMinLines),
       moveSimilarity: parseSimilarity(stored.moveSimilarity),
+      mapTag: parseTagFilter(stored.mapTag),
     }
   } catch {
     return { ...DEFAULTS }

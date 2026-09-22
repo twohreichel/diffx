@@ -22,6 +22,22 @@ export interface FileGroup {
   entries: SymbolEntry[]
 }
 
+export type TagFilter = ChangeTag | 'all'
+
+export const TAG_FILTERS: readonly TagFilter[] = ['all', 'added', 'removed', 'modified', 'moved', 'structurally-unchanged']
+
+export const DEFAULT_TAG_FILTER: TagFilter = 'all'
+
+export function parseTagFilter(raw: unknown): TagFilter {
+  return TAG_FILTERS.find((tag) => tag === raw) ?? DEFAULT_TAG_FILTER
+}
+
+/** What the map shows of itself. */
+export interface MapFilter {
+  tag: TagFilter
+  path: string
+}
+
 /** The other features feed the map, none of them is required (FR-007). */
 export interface ChangeMapInputs {
   moves?: MovePair[]
@@ -82,4 +98,16 @@ export function buildChangeMap(files: FileDiffMetadata[], inputs: ChangeMapInput
   return groups.sort(
     (a, b) => Number(a.structurallyUnchanged) - Number(b.structurallyUnchanged) || weight(b) - weight(a),
   )
+}
+
+/** The part of the map a filter leaves, files without a matching entry dropped. */
+export function filterChangeMap(groups: FileGroup[], filter: MapFilter): FileGroup[] {
+  const path = filter.path.trim().toLowerCase()
+  return groups
+    .filter((group) => group.path.toLowerCase().includes(path))
+    .map((group) => ({
+      ...group,
+      entries: filter.tag === 'all' ? group.entries : group.entries.filter((entry) => entry.tags.includes(filter.tag as ChangeTag)),
+    }))
+    .filter((group) => group.entries.length > 0)
 }

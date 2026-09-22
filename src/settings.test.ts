@@ -94,6 +94,23 @@ describe('loadSettings', () => {
     expect(loadSettings().ignoreComments).toBe(true)
   })
 
+  it('starts with the change map closed and unfiltered', () => {
+    const settings = loadSettings()
+    expect(settings.mapOpen).toBe(false)
+    expect(settings.mapTag).toBe('all')
+    expect(settings.mapPath).toBe('')
+  })
+
+  it('keeps a stored map state and rejects an unknown tag', () => {
+    writeSettings({ mapOpen: true, mapTag: 'moved', mapPath: 'src/' })
+    const settings = loadSettings()
+    expect(settings.mapOpen).toBe(true)
+    expect(settings.mapTag).toBe('moved')
+    expect(settings.mapPath).toBe('src/')
+    writeSettings({ mapTag: 'whatever' })
+    expect(loadSettings().mapTag).toBe('all')
+  })
+
   it('leaves the other settings untouched', () => {
     writeSettings({ diffStyle: 'unified', defaultTabSize: 2 })
     const settings = loadSettings()

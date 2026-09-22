@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parsePatchFiles, type FileDiffMetadata } from '@pierre/diffs'
 import type { MovePair } from '../moves.js'
-import { buildChangeMap } from './buildChangeMap.js'
+import { buildChangeMap, filterChangeMap, parseTagFilter } from './buildChangeMap.js'
 
 const PATCH = `diff --git a/app.py b/app.py
 index a111b29..4154b18 100644
@@ -91,5 +91,28 @@ describe('buildChangeMap', () => {
     const [group] = buildChangeMap([renamed])
     expect(group.named).toBe(false)
     expect(group.entries.map((entry) => [entry.name, entry.added, entry.removed])).toEqual([['top level', 6, 1]])
+  })
+})
+
+describe('filterChangeMap', () => {
+  it('keeps the entries carrying the chosen tag and drops the files left empty', async () => {
+    const map = buildChangeMap(await files())
+    const filtered = filterChangeMap(map, { tag: 'removed', path: '' })
+    expect(filtered.map((group) => group.path)).toEqual(['tool.ts'])
+    expect(filtered[0].entries.map((entry) => entry.name)).toEqual(['drop'])
+  })
+
+  it('matches a path substring regardless of case', async () => {
+    const map = buildChangeMap(await files())
+    expect(filterChangeMap(map, { tag: 'all', path: 'TOOL' }).map((group) => group.path)).toEqual(['tool.ts'])
+    expect(filterChangeMap(map, { tag: 'all', path: '' })).toHaveLength(2)
+  })
+})
+
+describe('parseTagFilter', () => {
+  it('defaults to all and keeps a known tag', () => {
+    expect(parseTagFilter(undefined)).toBe('all')
+    expect(parseTagFilter('nonsense')).toBe('all')
+    expect(parseTagFilter('moved')).toBe('moved')
   })
 })
