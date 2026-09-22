@@ -3,12 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import type { FileDiffMetadata } from '@pierre/diffs'
 import { blinkCSS } from '../../blink'
+import { movesCSS, type MovePair } from '../../moves'
 
-const captured: { options?: Record<string, unknown> } = {}
+const captured: { options?: Record<string, unknown>; annotations?: { lineNumber: number; metadata: unknown }[] } = {}
 
 vi.mock('@pierre/diffs/react', () => ({
-  FileDiff: (props: { options: Record<string, unknown> }) => {
+  FileDiff: (props: {
+    options: Record<string, unknown>
+    lineAnnotations: { lineNumber: number; metadata: unknown }[]
+  }) => {
     captured.options = props.options
+    captured.annotations = props.lineAnnotations
     return <div data-testid="file-diff" />
   },
 }))
@@ -32,6 +37,8 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
       fileDiff={fileDiff}
       filePath="src/app.ts"
       annotations={[]}
+      moves={[]}
+      onJumpToMove={vi.fn()}
       diffStyle="split"
       blinkState="after"
       lineDiff="word"
@@ -49,6 +56,7 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
 
 beforeEach(() => {
   captured.options = undefined
+  captured.annotations = undefined
 })
 
 describe('FileDiffCard intra-line options', () => {
@@ -91,5 +99,42 @@ describe('FileDiffCard blink options', () => {
   it('ignores soft wrap, which the hidden column cannot survive', () => {
     expect(renderCard({ diffStyle: 'blink', softWrap: true }).overflow).toBe('scroll')
     expect(renderCard({ diffStyle: 'split', softWrap: true }).overflow).toBe('wrap')
+  })
+})
+
+const localMove: MovePair = {
+  id: 'M1',
+  from: { path: 'src/app.ts', side: 'deletions', startLine: 12, lineCount: 7 },
+  to: { path: 'src/app.ts', side: 'additions', startLine: 40, lineCount: 7 },
+  kind: 'exact',
+  changedLines: [],
+  ambiguous: false,
+}
+
+const foreignMove: MovePair = {
+  ...localMove,
+  id: 'M2',
+  from: { path: 'src/other.ts', side: 'deletions', startLine: 3, lineCount: 6 },
+  to: { path: 'src/other.ts', side: 'additions', startLine: 90, lineCount: 6 },
+}
+
+describe('FileDiffCard moved blocks', () => {
+  it('marks the moved lines of this file', () => {
+    const css = renderCard({ moves: [localMove] }).unsafeCSS as string
+    expect(css).toContain(movesCSS([localMove], 'src/app.ts'))
+  })
+
+  it('badges both ends of a pair that stays inside the file', () => {
+    renderCard({ moves: [localMove] })
+    expect(captured.annotations).toEqual([
+      { side: 'deletions', lineNumber: 12, metadata: { _move: localMove, role: 'from' } },
+      { side: 'additions', lineNumber: 40, metadata: { _move: localMove, role: 'to' } },
+    ])
+  })
+
+  it('leaves the ends that belong to other files alone', () => {
+    renderCard({ moves: [foreignMove] })
+    expect(captured.annotations).toEqual([])
+    expect(renderCard({ moves: [foreignMove] }).unsafeCSS as string).not.toContain('data-column-number')
   })
 })

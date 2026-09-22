@@ -7,10 +7,31 @@ import { CommentBubble } from './CommentBubble'
 import { hiddenAnnotations } from '../hiddenComments'
 import { MAX_LINE_DIFF_LENGTH, lineDiffType, type LineDiffMode } from '../../lineDiff'
 import { blinkCSS, rendererDiffStyle, type BlinkState, type ViewMode } from '../../blink'
+import { movesCSS, type MovePair, type MoveRun } from '../../moves'
+import { MoveBadge } from './MoveBadge'
 
 interface PendingComment {
   side: AnnotationSide
   lineNumber: number
+}
+
+interface MoveMarker {
+  _move: MovePair
+  role: 'from' | 'to'
+}
+
+type CardAnnotation = ReviewComment | { _pending: true } | MoveMarker
+
+/** A badge on each end of a pair that has an end in this file. */
+function moveAnnotations(moves: MovePair[], filePath: string): DiffLineAnnotation<MoveMarker>[] {
+  return moves.flatMap((pair) => [
+    ...(pair.from.path === filePath
+      ? [{ side: 'deletions' as const, lineNumber: pair.from.startLine, metadata: { _move: pair, role: 'from' as const } }]
+      : []),
+    ...(pair.to.path === filePath
+      ? [{ side: 'additions' as const, lineNumber: pair.to.startLine, metadata: { _move: pair, role: 'to' as const } }]
+      : []),
+  ])
 }
 
 interface FileDiffCardProps {
@@ -18,6 +39,8 @@ interface FileDiffCardProps {
   fileDiff: FileDiffMetadata
   filePath: string
   annotations: DiffLineAnnotation<ReviewComment>[]
+  moves: MovePair[]
+  onJumpToMove: (run: MoveRun) => void
   diffStyle: ViewMode
   blinkState: BlinkState
   lineDiff: LineDiffMode
@@ -34,6 +57,8 @@ export const FileDiffCard = memo(function FileDiffCard({
   fileDiff,
   filePath,
   annotations,
+  moves,
+  onJumpToMove,
   diffStyle,
   blinkState,
   lineDiff,
@@ -70,8 +95,9 @@ export const FileDiffCard = memo(function FileDiffCard({
     return ''
   }
 
-  const allAnnotations: DiffLineAnnotation<ReviewComment | { _pending: true }>[] = [
+  const allAnnotations: DiffLineAnnotation<CardAnnotation>[] = [
     ...annotations,
+    ...moveAnnotations(moves, filePath),
     ...(pending
       ? [
           {
@@ -99,7 +125,7 @@ export const FileDiffCard = memo(function FileDiffCard({
         </div>
       ) : (
         <>
-          <FileDiff<ReviewComment | { _pending: true }>
+          <FileDiff<CardAnnotation>
             fileDiff={fileDiff}
             options={{
               diffStyle: rendererDiffStyle(diffStyle),
@@ -117,7 +143,8 @@ export const FileDiffCard = memo(function FileDiffCard({
               // underline adds the second, non-colour cue Constitution IX asks for.
               unsafeCSS:
                 `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
-                (blink ? blinkCSS(blinkState) : ''),
+                (blink ? blinkCSS(blinkState) : '') +
+                movesCSS(moves, filePath),
             }}
             lineAnnotations={allAnnotations}
             renderHeaderMetadata={() => (
@@ -141,6 +168,10 @@ export const FileDiffCard = memo(function FileDiffCard({
               </>
             )}
             renderAnnotation={(annotation) => {
+              if ('_move' in annotation.metadata) {
+                const marker = annotation.metadata
+                return <MoveBadge pair={marker._move} role={marker.role} onJump={onJumpToMove} />
+              }
               if ('_pending' in annotation.metadata) {
                 return (
                   <CommentForm

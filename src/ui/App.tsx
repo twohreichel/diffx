@@ -6,6 +6,7 @@ import type { FileDiffMetadata } from '@pierre/diffs'
 import type { ReviewComment } from '../types'
 import { FULL_CONTEXT_LINE_CAP, estimateTotalLines, stepContext, type ContextWidth } from '../context'
 import { changeRegions, type ViewMode } from '../blink'
+import type { MoveRun } from '../moves'
 import { useDiff } from './hooks/useDiff'
 import { useComments } from './hooks/useComments'
 import { useSettings } from './hooks/useSettings'
@@ -14,6 +15,8 @@ import { useFullDiffs, fileKey } from './hooks/useFullDiffs'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useScrollAnchor } from './hooks/useScrollAnchor'
 import { useBlink, usePrefersReducedMotion } from './hooks/useBlink'
+import { useMoves } from './hooks/useMoves'
+import { jumpToMove } from './moveJump'
 import { Toolbar } from './components/Toolbar'
 import { DiffViewer } from './components/DiffViewer'
 import { FileTree } from './components/FileTree'
@@ -159,6 +162,12 @@ export function App() {
     reducedMotion,
   })
 
+  const moves = useMoves(displayFiles, { minLines: settings.moveMinLines, similarity: settings.moveSimilarity })
+  const handleJumpToMove = useCallback((run: MoveRun) => {
+    setActiveFile(run.path)
+    jumpToMove(run)
+  }, [])
+
   const confirmFullContext = useCallback(() => {
     const lines = estimateTotalLines(files)
     return lines <= FULL_CONTEXT_LINE_CAP || window.confirm(`Full context spans at least ${lines} lines. Render it?`)
@@ -297,6 +306,8 @@ export function App() {
               tabSizeMap={tabSizeMap}
               defaultTabSize={settings.defaultTabSize}
               softWrap={settings.softWrap}
+              moves={moves}
+              onJumpToMove={handleJumpToMove}
               viewedFiles={viewedFiles}
               binaryFiles={binaryFileMap}
               onViewedChange={handleViewedChange}

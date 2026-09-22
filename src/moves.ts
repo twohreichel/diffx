@@ -225,3 +225,46 @@ export function detectMoves(files: FileDiffMetadata[], settings: Partial<MoveSet
   pairs.sort((a, b) => a.to.path.localeCompare(b.to.path) || a.to.startLine - b.to.startLine)
   return pairs.map((pair, index) => ({ ...pair, id: `M${index + 1}` }))
 }
+
+/** The marking hue, deliberately neither the addition nor the deletion colour. */
+const MOVE_HUE = 'light-dark(#8250df,#a371f7)'
+/** Upper bound on marked lines per file, so the generated rule stays small. */
+const MAX_MARKED_LINES = 2000
+
+type LineType = 'change-deletion' | 'change-addition'
+
+/** The lines of a run, minus the ones that read differently. */
+function markedLines(run: MoveRun, skip: number[]): number[] {
+  const skipped = new Set(skip)
+  const lines: number[] = []
+  for (let line = run.startLine; line < run.startLine + run.lineCount; line++) {
+    if (!skipped.has(line)) lines.push(line)
+  }
+  return lines
+}
+
+/**
+ * Shadow-root CSS that marks the moved runs of one file.
+ *
+ * Both cells of a row carry the neutral background, the line number carries the
+ * bar. The third attribute lifts the rule past the package's own line colouring.
+ */
+export function movesCSS(pairs: MovePair[], path: string): string {
+  const rows: string[] = []
+  const numbers: string[] = []
+  const mark = (type: LineType, lines: number[]) => {
+    for (const line of lines.slice(0, MAX_MARKED_LINES)) {
+      rows.push(`[data-line-type="${type}"][data-line="${line}"][data-line-index]`)
+      numbers.push(`[data-line-type="${type}"][data-column-number="${line}"][data-line-index]`)
+    }
+  }
+  for (const pair of pairs) {
+    if (pair.from.path === path) mark('change-deletion', markedLines(pair.from, []))
+    if (pair.to.path === path) mark('change-addition', markedLines(pair.to, pair.changedLines))
+  }
+  if (rows.length === 0) return ''
+  return (
+    `${[...rows, ...numbers].join(',')}{background-color:var(--diffs-bg-context,var(--diffs-bg))}` +
+    `${numbers.join(',')}{box-shadow:inset 3px 0 0 ${MOVE_HUE}}`
+  )
+}

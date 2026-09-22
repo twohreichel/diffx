@@ -4,6 +4,7 @@ import type { ReviewComment } from '../../types'
 import type { BinaryFileInfo } from '../hooks/useDiff'
 import type { LineDiffMode } from '../../lineDiff'
 import type { BlinkState, ViewMode } from '../../blink'
+import type { MovePair, MoveRun } from '../../moves'
 import { FileDiffCard } from './FileDiffCard'
 import { BinaryFileDiff } from './BinaryFileDiff'
 
@@ -15,6 +16,8 @@ interface DiffViewerProps {
   tabSizeMap: Record<string, number>
   defaultTabSize: number
   softWrap: boolean
+  moves: MovePair[]
+  onJumpToMove: (run: MoveRun) => void
   viewedFiles: Set<string>
   binaryFiles: Map<string, BinaryFileInfo>
   onViewedChange: (filePath: string, viewed: boolean) => void
@@ -33,6 +36,8 @@ export const DiffViewer = memo(function DiffViewer({
   tabSizeMap,
   defaultTabSize,
   softWrap,
+  moves,
+  onJumpToMove,
   viewedFiles,
   binaryFiles,
   onViewedChange,
@@ -93,6 +98,8 @@ export const DiffViewer = memo(function DiffViewer({
             fileDiff={file}
             filePath={filePath}
             annotations={fileAnnotationsMap.get(filePath) ?? emptyAnnotations}
+            moves={moves}
+            onJumpToMove={onJumpToMove}
             diffStyle={diffStyle}
             blinkState={blinkState}
             lineDiff={lineDiff}

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parsePatchFiles, type FileDiffMetadata } from '@pierre/diffs'
-import { detectMoves } from './moves'
+import { detectMoves, movesCSS } from './moves'
 
 function parse(patch: string): FileDiffMetadata[] {
   return parsePatchFiles(patch).flatMap((p) => p.files)
@@ -251,5 +251,28 @@ describe('detectMoves modified', () => {
 
   it('leaves the block alone once the similarity floor is raised past it', () => {
     expect(detectMoves(parse(MOVED_AND_EDITED), { similarity: 0.9 })).toEqual([])
+  })
+})
+
+describe('movesCSS', () => {
+  const pairs = detectMoves(parse(MOVED_FUNCTION))
+
+  it('marks both runs of a pair, gutter and code side', () => {
+    const css = movesCSS(pairs, 'src/app.ts')
+    expect(css).toContain('[data-line-type="change-deletion"][data-line="1"][data-line-index]')
+    expect(css).toContain('[data-line-type="change-deletion"][data-column-number="7"][data-line-index]')
+    expect(css).toContain('[data-line-type="change-addition"][data-line="4"][data-line-index]')
+    expect(css).toContain('[data-line-type="change-addition"][data-column-number="10"][data-line-index]')
+  })
+
+  it('leaves a file the pair does not touch unmarked', () => {
+    expect(movesCSS(pairs, 'src/other.ts')).toBe('')
+  })
+
+  it('keeps the edited lines of a modified move out of the neutral marking', () => {
+    const edited = detectMoves(parse(MOVED_AND_EDITED))
+    const css = movesCSS(edited, 'src/app.ts')
+    expect(css).toContain('[data-line-type="change-addition"][data-line="3"][data-line-index]')
+    expect(css).not.toContain('[data-line-type="change-addition"][data-line="4"][data-line-index]')
   })
 })

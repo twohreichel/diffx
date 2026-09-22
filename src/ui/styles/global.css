@@ -16,6 +16,8 @@
     --primary-hover: #0550ae;
     --danger: #cf222e;
     --success: #1a7f37;
+    --move: #8250df;
+    --move-bg: #f3effd;
     --comment-bg: #fff8c5;
     --comment-border: #d4a72c;
 }
@@ -31,6 +33,8 @@
         --primary-hover: #79c0ff;
         --danger: #f85149;
         --success: #3fb950;
+        --move: #a371f7;
+        --move-bg: #21173a;
         --comment-bg: #2d2000;
         --comment-border: #9e6a03;
     }
@@ -422,6 +426,36 @@ body {
 
 .blink-state-after {
     background: var(--success);
+}
+
+/* Moved blocks — the hue is neither the addition nor the deletion colour */
+.move-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 16px;
+    padding: 4px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--move);
+    background: var(--bg);
+    border: 1px solid var(--move);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.move-badge:hover {
+    background: var(--move-bg);
+}
+
+.move-badge-glyph {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.move-badge-id {
+    font-weight: 600;
+    letter-spacing: 0.04em;
 }
 
 /* Diff viewer */
