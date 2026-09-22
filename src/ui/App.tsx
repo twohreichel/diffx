@@ -162,6 +162,11 @@ export function App() {
     reducedMotion,
   })
 
+  const structuralQuery = useMemo(
+    () => ({ staged: settings.staged, untracked: settings.untracked, ignoreComments: settings.ignoreComments }),
+    [settings.staged, settings.untracked, settings.ignoreComments],
+  )
+
   const moves = useMoves(displayFiles, { minLines: settings.moveMinLines, similarity: settings.moveSimilarity })
   const handleJumpToMove = useCallback((run: MoveRun) => {
     setActiveFile(run.path)
@@ -311,6 +316,7 @@ export function App() {
               softWrap={settings.softWrap}
               moves={moves}
               onJumpToMove={handleJumpToMove}
+              structuralQuery={structuralQuery}
               viewedFiles={viewedFiles}
               binaryFiles={binaryFileMap}
               onViewedChange={handleViewedChange}

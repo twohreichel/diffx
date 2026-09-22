@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import type { FileDiffMetadata } from '@pierre/diffs'
 import { blinkCSS } from '../../blink'
 import { movesCSS, type MovePair } from '../../moves'
+import type { StructuralFile, StructuralResponse } from '../../structural'
+import { structuralCSS } from '../../structuralView'
 
 const captured: { options?: Record<string, unknown>; annotations?: { lineNumber: number; metadata: unknown }[] } = {}
 
@@ -39,6 +41,7 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
       annotations={[]}
       moves={[]}
       onJumpToMove={vi.fn()}
+      structuralQuery={{ staged: true, untracked: true, ignoreComments: false }}
       diffStyle="split"
       blinkState="after"
       lineDiff="word"
@@ -136,5 +139,52 @@ describe('FileDiffCard moved blocks', () => {
     renderCard({ moves: [foreignMove] })
     expect(captured.annotations).toEqual([])
     expect(renderCard({ moves: [foreignMove] }).unsafeCSS as string).not.toContain('data-column-number')
+  })
+})
+
+const withOids: FileDiffMetadata = { ...fileDiff, prevObjectId: '1111111', newObjectId: '2222222' }
+
+const changed: StructuralFile = {
+  path: 'src/app.ts',
+  language: 'TypeScript',
+  unchanged: false,
+  fellBack: false,
+  changes: [{ before: { lineNumber: 2, ranges: [{ start: 4, end: 9 }] }, after: { lineNumber: 2, ranges: [{ start: 4, end: 9 }] } }],
+}
+
+function serve(body: StructuralResponse) {
+  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify(body)))))
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('FileDiffCard structural mode', () => {
+  it('leaves the server alone outside structural mode', () => {
+    serve({ available: true, result: changed })
+    renderCard({ fileDiff: withOids, diffStyle: 'split' })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('colours only the rows difftastic reports for the open file', async () => {
+    serve({ available: true, result: changed })
+    renderCard({ fileDiff: withOids, diffStyle: 'structural' })
+    await waitFor(() => expect(captured.options!.unsafeCSS as string).toContain(structuralCSS(changed)))
+    expect(captured.options!.diffStyle).toBe('split')
+  })
+
+  it('says when a file only changed shape', async () => {
+    serve({ available: true, result: { ...changed, unchanged: true, changes: [] } })
+    renderCard({ fileDiff: withOids, diffStyle: 'structural' })
+    expect(await screen.findByText(/No structural change/)).toBeInTheDocument()
+  })
+
+  it('falls back to the unified rows and names the reason', async () => {
+    serve({ available: true, reason: 'difftastic result could not be read' })
+    renderCard({ fileDiff: withOids, diffStyle: 'structural' })
+    expect(await screen.findByText(/could not be read/)).toBeInTheDocument()
+    expect(captured.options!.diffStyle).toBe('unified')
+    expect(captured.options!.unsafeCSS as string).not.toContain('data-line-type')
   })
 })

@@ -5,6 +5,7 @@ import type { BinaryFileInfo } from '../hooks/useDiff'
 import type { LineDiffMode } from '../../lineDiff'
 import type { BlinkState, ViewMode } from '../../blink'
 import type { MovePair, MoveRun } from '../../moves'
+import type { StructuralQuery } from '../hooks/useStructural'
 import { FileDiffCard } from './FileDiffCard'
 import { BinaryFileDiff } from './BinaryFileDiff'
 
@@ -18,6 +19,7 @@ interface DiffViewerProps {
   softWrap: boolean
   moves: MovePair[]
   onJumpToMove: (run: MoveRun) => void
+  structuralQuery: StructuralQuery
   viewedFiles: Set<string>
   binaryFiles: Map<string, BinaryFileInfo>
   onViewedChange: (filePath: string, viewed: boolean) => void
@@ -38,6 +40,7 @@ export const DiffViewer = memo(function DiffViewer({
   softWrap,
   moves,
   onJumpToMove,
+  structuralQuery,
   viewedFiles,
   binaryFiles,
   onViewedChange,
@@ -100,6 +103,7 @@ export const DiffViewer = memo(function DiffViewer({
             annotations={fileAnnotationsMap.get(filePath) ?? emptyAnnotations}
             moves={moves}
             onJumpToMove={onJumpToMove}
+            structuralQuery={structuralQuery}
             diffStyle={diffStyle}
             blinkState={blinkState}
             lineDiff={lineDiff}

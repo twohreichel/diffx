@@ -1,4 +1,4 @@
-import { useState, memo } from 'react'
+import { useState, useRef, memo } from 'react'
 import { FileDiff } from '@pierre/diffs/react'
 import type { DiffLineAnnotation, FileDiffMetadata, AnnotationSide } from '@pierre/diffs'
 import type { ReviewComment } from '../../types'
@@ -8,7 +8,19 @@ import { hiddenAnnotations } from '../hiddenComments'
 import { MAX_LINE_DIFF_LENGTH, lineDiffType, type LineDiffMode } from '../../lineDiff'
 import { blinkCSS, rendererDiffStyle, type BlinkState, type ViewMode } from '../../blink'
 import { movesCSS, type MovePair, type MoveRun } from '../../moves'
+import { structuralCSS, structuralNotice } from '../../structuralView'
+import { useOnScreen } from '../hooks/useOnScreen'
+import { useStructural, type StructuralQuery, type StructuralState } from '../hooks/useStructural'
 import { MoveBadge } from './MoveBadge'
+
+const STRUCTURAL_LOADING = 'Comparing syntax trees…'
+
+/** The one line a structural result gets, empty when it has nothing to add. */
+function structuralLine(structural: StructuralState): string {
+  if (structural.loading) return STRUCTURAL_LOADING
+  if (structural.reason) return structural.reason
+  return structural.result ? structuralNotice(structural.result) : ''
+}
 
 interface PendingComment {
   side: AnnotationSide
@@ -41,6 +53,7 @@ interface FileDiffCardProps {
   annotations: DiffLineAnnotation<ReviewComment>[]
   moves: MovePair[]
   onJumpToMove: (run: MoveRun) => void
+  structuralQuery: StructuralQuery
   diffStyle: ViewMode
   blinkState: BlinkState
   lineDiff: LineDiffMode
@@ -59,6 +72,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   annotations,
   moves,
   onJumpToMove,
+  structuralQuery,
   diffStyle,
   blinkState,
   lineDiff,
@@ -70,9 +84,24 @@ export const FileDiffCard = memo(function FileDiffCard({
   onDeleteComment,
 }: FileDiffCardProps) {
   const [pending, setPending] = useState<PendingComment | null>(null)
+  const card = useRef<HTMLDivElement>(null)
+  const onScreen = useOnScreen(card)
 
   const hidden = hiddenAnnotations(fileDiff, annotations)
   const blink = diffStyle === 'blink'
+
+  // FR-010: the comparison is asked for per file, and only once the file is in
+  // view — the whole diff mounts at once, but most of it is never looked at.
+  const structural = useStructural(
+    diffStyle === 'structural' && onScreen && fileDiff.prevObjectId && fileDiff.newObjectId
+      ? { ...structuralQuery, path: filePath, oldOid: fileDiff.prevObjectId, newOid: fileDiff.newObjectId }
+      : null,
+  )
+  const marked = structural.result && !structural.result.fellBack ? structural.result : null
+  // Without a usable structural result the file keeps its line-based rows, and
+  // the notice above them carries the reason.
+  const fellBackToLines = diffStyle === 'structural' && marked === null && !structural.loading
+  const notice = structuralLine(structural)
 
   const getLineContent = (side: AnnotationSide, lineNumber: number): string => {
     const lines = side === 'additions' ? fileDiff.additionLines : fileDiff.deletionLines
@@ -110,7 +139,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   ]
 
   return (
-    <div className={`file-diff-card ${viewed ? 'file-diff-viewed' : ''}`} id={id}>
+    <div className={`file-diff-card ${viewed ? 'file-diff-viewed' : ''}`} id={id} ref={card}>
       {viewed ? (
         <div className="file-diff-viewed-header">
           <span className="file-diff-viewed-name">{filePath}</span>
@@ -125,10 +154,11 @@ export const FileDiffCard = memo(function FileDiffCard({
         </div>
       ) : (
         <>
+          {notice && <p className="structural-notice">{notice}</p>}
           <FileDiff<CardAnnotation>
             fileDiff={fileDiff}
             options={{
-              diffStyle: rendererDiffStyle(diffStyle),
+              diffStyle: fellBackToLines ? 'unified' : rendererDiffStyle(diffStyle),
               stickyHeader: true,
               expansionLineCount: 20,
               enableGutterUtility: true,
@@ -144,7 +174,8 @@ export const FileDiffCard = memo(function FileDiffCard({
               unsafeCSS:
                 `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
                 (blink ? blinkCSS(blinkState) : '') +
-                movesCSS(moves, filePath),
+                movesCSS(moves, filePath) +
+                (marked ? structuralCSS(marked) : ''),
             }}
             lineAnnotations={allAnnotations}
             renderHeaderMetadata={() => (
