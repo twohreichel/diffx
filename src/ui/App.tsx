@@ -256,6 +256,9 @@ export function App() {
         onContextChange={handleContextChange}
         onLineDiffChange={(lineDiff) => updateSettings({ lineDiff })}
         onAutoBlinkChange={(autoBlink) => updateSettings({ autoBlink })}
+        moveMinLines={settings.moveMinLines}
+        moveSimilarity={settings.moveSimilarity}
+        onMoveSettingsChange={(moveSettings) => updateSettings(moveSettings)}
         onDiffOptionsChange={(options) => updateSettings(options)}
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}
         onSoftWrapChange={(softWrap) => updateSettings({ softWrap })}

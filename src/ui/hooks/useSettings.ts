@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { DEFAULT_CONTEXT, type ContextWidth } from '../../context'
 import { DEFAULT_LINE_DIFF, type LineDiffMode } from '../../lineDiff'
 import { DEFAULT_AUTO_BLINK, DEFAULT_VIEW_MODE, type AutoBlink, type ViewMode } from '../../blink'
+import { DEFAULT_MOVE_SETTINGS } from '../../moves'
 
 export interface Settings {
   staged: boolean
@@ -11,6 +12,8 @@ export interface Settings {
   context: ContextWidth
   lineDiff: LineDiffMode
   autoBlink: AutoBlink
+  moveMinLines: number
+  moveSimilarity: number
   softWrap: boolean
   browser?: string
 }
@@ -23,6 +26,8 @@ const DEFAULTS: Settings = {
   context: DEFAULT_CONTEXT,
   lineDiff: DEFAULT_LINE_DIFF,
   autoBlink: DEFAULT_AUTO_BLINK,
+  moveMinLines: DEFAULT_MOVE_SETTINGS.minLines,
+  moveSimilarity: DEFAULT_MOVE_SETTINGS.similarity,
   softWrap: false,
 }
 

@@ -12,6 +12,7 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
   const onLineDiffChange = vi.fn()
   const onDiffStyleChange = vi.fn()
   const onAutoBlinkChange = vi.fn()
+  const onMoveSettingsChange = vi.fn()
   render(
     <Toolbar
       repoName="diffx"
@@ -34,6 +35,9 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       autoBlink="off"
       reducedMotion={false}
       onAutoBlinkChange={onAutoBlinkChange}
+      moveMinLines={5}
+      moveSimilarity={0.8}
+      onMoveSettingsChange={onMoveSettingsChange}
       onDiffStyleChange={onDiffStyleChange}
       onDiffOptionsChange={vi.fn()}
       onDefaultTabSizeChange={vi.fn()}
@@ -43,7 +47,7 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       {...overrides}
     />,
   )
-  return { onContextChange, onLineDiffChange, onDiffStyleChange, onAutoBlinkChange }
+  return { onContextChange, onLineDiffChange, onDiffStyleChange, onAutoBlinkChange, onMoveSettingsChange }
 }
 
 async function openSettings(): Promise<void> {
@@ -161,5 +165,25 @@ describe('Toolbar blink mode', () => {
     renderToolbar({ diffStyle: 'unified' })
     await openSettings()
     expect(screen.queryByLabelText('Auto blink')).toBeNull()
+  })
+})
+
+describe('Toolbar move thresholds', () => {
+  it('offers the shortest block a move may have', async () => {
+    const { onMoveSettingsChange } = renderToolbar()
+    await openSettings()
+    const select = screen.getByLabelText('Moved block size')
+    expect(select).toHaveValue('5')
+    await userEvent.selectOptions(select, '20')
+    expect(onMoveSettingsChange).toHaveBeenCalledWith({ moveMinLines: 20 })
+  })
+
+  it('offers how much of a block may have been edited on the way', async () => {
+    const { onMoveSettingsChange } = renderToolbar({ moveSimilarity: 0.9 })
+    await openSettings()
+    const select = screen.getByLabelText('Moved block similarity')
+    expect(select).toHaveValue('0.9')
+    await userEvent.selectOptions(select, '1')
+    expect(onMoveSettingsChange).toHaveBeenCalledWith({ moveSimilarity: 1 })
   })
 })

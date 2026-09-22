@@ -4,6 +4,7 @@ import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
 import { AUTO_BLINK_OPTIONS, parseAutoBlink, type AutoBlink, type BlinkState, type ViewMode } from '../../blink'
+import { MIN_LINES_OPTIONS, SIMILARITY_OPTIONS } from '../../moves'
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   split: 'Split',
@@ -12,6 +13,14 @@ const VIEW_MODE_LABELS: Record<ViewMode, string> = {
 }
 
 const BLINK_HINT = 'Space swaps before and after, n and p jump between changes'
+
+/** A similarity floor of 1 pairs only blocks that arrived unchanged. */
+const SIMILARITY_LABELS: Record<string, string> = {
+  '0.7': 'Loose (70%)',
+  '0.8': 'Balanced (80%)',
+  '0.9': 'Strict (90%)',
+  '1': 'Unchanged only',
+}
 
 const LINE_DIFF_LABELS: Record<LineDiffMode, string> = {
   word: 'Word',
@@ -40,6 +49,9 @@ interface ToolbarProps {
   customMode: boolean
   onDiffStyleChange: (style: ViewMode) => void
   onAutoBlinkChange: (interval: AutoBlink) => void
+  moveMinLines: number
+  moveSimilarity: number
+  onMoveSettingsChange: (settings: { moveMinLines?: number; moveSimilarity?: number }) => void
   onContextChange: (context: ContextWidth) => void
   onLineDiffChange: (mode: LineDiffMode) => void
   onDiffOptionsChange: (options: DiffOptions) => void
@@ -70,6 +82,9 @@ export function Toolbar({
   customMode,
   onDiffStyleChange,
   onAutoBlinkChange,
+  moveMinLines,
+  moveSimilarity,
+  onMoveSettingsChange,
   onContextChange,
   onLineDiffChange,
   onDiffOptionsChange,
@@ -241,6 +256,36 @@ export function Toolbar({
                   </select>
                 </div>
               )}
+              <div className="settings-item settings-item-spaced">
+                <label htmlFor="move-min-lines-select">Moved block size</label>
+                <select
+                  id="move-min-lines-select"
+                  className="settings-select"
+                  value={moveMinLines}
+                  onChange={(e) => onMoveSettingsChange({ moveMinLines: Number(e.target.value) })}
+                >
+                  {MIN_LINES_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option} lines
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="settings-item settings-item-spaced">
+                <label htmlFor="move-similarity-select">Moved block similarity</label>
+                <select
+                  id="move-similarity-select"
+                  className="settings-select"
+                  value={moveSimilarity}
+                  onChange={(e) => onMoveSettingsChange({ moveSimilarity: Number(e.target.value) })}
+                >
+                  {SIMILARITY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {SIMILARITY_LABELS[String(option)]}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="settings-item settings-item-spaced">
                 <span>Default tab size</span>
                 <select

@@ -11,6 +11,7 @@ import {
   type AutoBlink,
   type ViewMode,
 } from './blink.js'
+import { DEFAULT_MOVE_SETTINGS, parseMinLines, parseSimilarity } from './moves.js'
 
 const CONFIG_DIR = join(homedir(), '.config', 'diffx')
 const SETTINGS_FILE = join(CONFIG_DIR, 'settings.json')
@@ -23,6 +24,8 @@ export interface Settings {
   context: ContextWidth
   lineDiff: LineDiffMode
   autoBlink: AutoBlink
+  moveMinLines: number
+  moveSimilarity: number
   browser?: string
 }
 
@@ -34,6 +37,8 @@ const DEFAULTS: Settings = {
   context: DEFAULT_CONTEXT,
   lineDiff: DEFAULT_LINE_DIFF,
   autoBlink: DEFAULT_AUTO_BLINK,
+  moveMinLines: DEFAULT_MOVE_SETTINGS.minLines,
+  moveSimilarity: DEFAULT_MOVE_SETTINGS.similarity,
 }
 
 export function loadSettings(): Settings {
@@ -47,6 +52,8 @@ export function loadSettings(): Settings {
       lineDiff: parseLineDiffMode(stored.lineDiff),
       diffStyle: parseViewMode(stored.diffStyle),
       autoBlink: parseAutoBlink(stored.autoBlink),
+      moveMinLines: parseMinLines(stored.moveMinLines),
+      moveSimilarity: parseSimilarity(stored.moveSimilarity),
     }
   } catch {
     return { ...DEFAULTS }

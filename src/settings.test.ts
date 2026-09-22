@@ -68,6 +68,23 @@ describe('loadSettings', () => {
     expect(fallback.autoBlink).toBe('off')
   })
 
+  it('defaults the move thresholds to five lines and 0.8 similarity', () => {
+    const settings = loadSettings()
+    expect(settings.moveMinLines).toBe(5)
+    expect(settings.moveSimilarity).toBe(0.8)
+  })
+
+  it('keeps stored move thresholds and rejects unknown ones', () => {
+    writeSettings({ moveMinLines: 20, moveSimilarity: 1 })
+    const settings = loadSettings()
+    expect(settings.moveMinLines).toBe(20)
+    expect(settings.moveSimilarity).toBe(1)
+    writeSettings({ moveMinLines: 7, moveSimilarity: 0.55 })
+    const fallback = loadSettings()
+    expect(fallback.moveMinLines).toBe(5)
+    expect(fallback.moveSimilarity).toBe(0.8)
+  })
+
   it('leaves the other settings untouched', () => {
     writeSettings({ diffStyle: 'unified', defaultTabSize: 2 })
     const settings = loadSettings()
