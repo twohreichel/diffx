@@ -10,6 +10,37 @@ A local code review tool designed for the coding agent workflow. Review AI-gener
 npm install -g diffx-cli
 ```
 
+### Install this fork
+
+The fork keeps the package name `diffx-cli` and the `diffx` command, so a global
+install of a local build replaces the diffx that is already on your PATH.
+
+```bash
+git clone https://github.com/twohreichel/diffx.git
+cd diffx
+corepack enable        # provides the pnpm version the repo pins
+pnpm install
+pnpm build             # writes dist/, the only directory the package ships
+npm install -g .
+```
+
+A directory install does not run the build itself, so `pnpm build` is required
+before `npm install -g .`.
+
+Check afterwards which binary answers:
+
+```bash
+which -a diffx
+diffx --version
+```
+
+A global install lands in the node environment that is active at that moment.
+Where an earlier diffx was installed under a different node version or through
+Homebrew's node, that binary stays on the PATH and can still win — remove it
+there with `npm uninstall -g diffx-cli`, or make sure the new one comes first.
+
+To go back to the published version: `npm install -g diffx-cli`.
+
 ### Optional: difftastic
 
 The **Structural** view mode compares syntax trees instead of lines, so a pure
@@ -25,6 +56,24 @@ sudo pacman -S difftastic        # Arch
 ```
 
 Tested against difftastic 0.71.0.
+
+### Optional: `.gitattributes` diff drivers
+
+The change map starts from git's hunk header — the text after `@@ … @@` — and
+corrects it with its own declaration patterns for Python, Rust, PHP, Java,
+TypeScript, JavaScript and Go. For files outside that list the header is all
+there is, and git only writes a useful one for languages it knows. A diff driver
+per language improves it:
+
+```gitattributes
+*.php diff=php
+*.py  diff=python
+*.rs  diff=rust
+```
+
+PHP was the only language of the measured sample where this changed the result.
+For everything else, a wider context setting helps the attribution far more,
+because the patterns then see the declaration itself.
 
 ## Usage
 
@@ -56,6 +105,12 @@ Examples:
 ## Features
 
 - **Split / Unified view** — Toggle between side-by-side and inline diff
+- **Context slider** — 0, 3, 10 lines or the full file, with a warning before very large renders
+- **Intra-line diff** — Word or character level highlighting inside a changed line
+- **A/B blink** — Show the before and after state of a file in the same place, manually or on a timer
+- **Moved block detection** — Mark a block that only changed place and jump to its counterpart
+- **Structural view** — Compare syntax trees through difftastic, so a pure reformat shows no change
+- **Change map** — A panel of the changed symbols grouped by file, sized, tagged and filterable
 - **Syntax highlighting** — Powered by Shiki with GitHub themes
 - **File tree** — Hierarchical file browser with search filter and file change-type icons
 - **Inline comments** — Click the `+` button on any line to add a review comment

@@ -21,5 +21,5 @@ Prerequisite: 000 complete. Optional inputs: 004, 005.
 - [x] **T017** Persist panel state and filters at `<recon:SETTINGS>`.
 - [x] **T018** [P] DOM test: clicking an entry scrolls to the first changed line (`ui/mapJump.test.tsx`). Each mode is left to the manual check, see T013.
 - [ ] **T019** Manual check on a 15-file agent-generated change; judge whether Option A's accuracy suffices or Option B is needed for Rust/PHP.
-- [ ] **T020** Document any `.gitattributes` diff-driver hints in the fork README.
-- [ ] **T021** Changeset; commit `feat(ui): change map panel`.
+- [x] **T020** Document any `.gitattributes` diff-driver hints in the fork README.
+- [x] **T021** Changeset; commit `feat(ui): change map panel`.

@@ -24,5 +24,5 @@ Prerequisite: 000 complete. Strongly preferred: 002 merged (reuses `applyRanges`
 - [x] **T020** Implement per-file mode override without touching the global default (FR-009).
 - [x] **T021** [P] Integration tests, skipped when `difft` is absent: reformat-only and wrapped-block fixtures.
 - [ ] **T022** Manual check on a reformat commit, a wrapped-block commit, and an unsupported-language file.
-- [ ] **T023** Document the optional dependency in the fork README with install commands per OS.
+- [x] **T023** Document the optional dependency in the fork README with install commands per OS.
 - [ ] **T024** Changeset; commit `feat(ui): structural diff mode via difftastic`.
