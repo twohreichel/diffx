@@ -11,6 +11,21 @@
 | VI Performance | PASS — async, FR-009 |
 | X Testing | PASS |
 
+## Shipped: A and B together
+
+The parsed model carries the hunk header's function context as `hunk.hunkContext`,
+so Option A works — but on its own it is too weak to build a map from. Measured on
+real `git diff` output without a configured diff driver, the header for a change
+inside a Python function reads `import os`, for a Java method `public class Service {`
+and for a Rust method `impl Config {`. Configuring the drivers helps PHP and nothing
+else in that sample.
+
+Shipped is therefore A seeded by B: the header opens the hunk, and every line of the
+hunk — context and changed alike — is read against a small per-language declaration
+pattern set, which is also where the symbol *kind* comes from. Accuracy grows with
+the context width, because a wider window contains the enclosing declaration more
+often, and at `full` the attribution is exact.
+
 ## Decision: how to get symbols
 
 Three options, in ascending cost:

@@ -2,11 +2,11 @@
 
 Prerequisite: 000 complete. Optional inputs: 004, 005.
 
-- [ ] **T001** Branch `feat/006-change-map`.
-- [ ] **T002** Verify hunk headers carry function context in the parsed model (`<recon:DIFF_MODEL>`); record Option A/B/C decision in `plan.md`.
-- [ ] **T003** Create pure module `map/attribute.ts` implementing hunk-header attribution.
-- [ ] **T004** [P] Unit tests: lines attributed to the enclosing symbol across Python, Rust, PHP, Java fixtures.
-- [ ] **T005** [P] Unit test: lines outside any symbol land in the file's `toplevel` entry.
+- [x] ~~**T001** Branch `feat/006-change-map`.~~ Superseded: the work runs on `main`.
+- [x] **T002** Verify hunk headers carry function context in the parsed model (`<recon:DIFF_MODEL>`); record Option A/B/C decision in `plan.md`.
+- [x] **T003** Create pure module `map/attribute.ts` implementing hunk-header attribution.
+- [x] **T004** [P] Unit tests: lines attributed to the enclosing symbol across Python, Rust, PHP, Java fixtures.
+- [x] **T005** [P] Unit test: lines outside any symbol land in the file's `toplevel` entry.
 - [ ] **T006** Create `map/buildChangeMap.ts` producing `SymbolEntry[]` with counts.
 - [ ] **T007** [P] Unit tests for counts and magnitude normalization.
 - [ ] **T008** Add optional move tagging from feature 004's `MovePair[]`.
