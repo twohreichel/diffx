@@ -37,6 +37,7 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       onAutoBlinkChange={onAutoBlinkChange}
       moveMinLines={5}
       moveSimilarity={0.8}
+      structural={{ available: true, version: '0.71.0' }}
       onMoveSettingsChange={onMoveSettingsChange}
       onDiffStyleChange={onDiffStyleChange}
       onDiffOptionsChange={vi.fn()}
@@ -185,5 +186,27 @@ describe('Toolbar move thresholds', () => {
     expect(select).toHaveValue('0.9')
     await userEvent.selectOptions(select, '1')
     expect(onMoveSettingsChange).toHaveBeenCalledWith({ moveSimilarity: 1 })
+  })
+})
+
+describe('Toolbar structural mode', () => {
+  const missing = { available: false, reason: 'difftastic not installed — brew install difftastic' }
+
+  it('offers the structural mode next to the others', () => {
+    renderToolbar()
+    expect(screen.getByRole('button', { name: 'Structural' })).toBeEnabled()
+  })
+
+  it('reports the chosen mode', async () => {
+    const { onDiffStyleChange } = renderToolbar()
+    await userEvent.click(screen.getByRole('button', { name: 'Structural' }))
+    expect(onDiffStyleChange).toHaveBeenCalledWith<[ViewMode]>('structural')
+  })
+
+  it('disables the mode and names the installation command when difftastic is absent', () => {
+    renderToolbar({ structural: missing })
+    const button = screen.getByRole('button', { name: 'Structural' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('title', missing.reason)
   })
 })

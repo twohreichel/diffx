@@ -40,7 +40,7 @@ function useWindowSize({ factor }: { factor: number }) {
 export function App() {
   const { settings, loaded, updateSettings } = useSettings()
   const blinkMode = settings.diffStyle === 'blink'
-  const { patch, repoName, branch, customMode, binaryFiles, tabSizeMap, untrackedFiles, loading, error } = useDiff({
+  const { patch, repoName, branch, customMode, binaryFiles, tabSizeMap, untrackedFiles, structural, loading, error } = useDiff({
     staged: settings.staged,
     untracked: settings.untracked,
     // Blink shows one complete state at a time, which only full context provides.
@@ -267,6 +267,7 @@ export function App() {
         onAutoBlinkChange={(autoBlink) => updateSettings({ autoBlink })}
         moveMinLines={settings.moveMinLines}
         moveSimilarity={settings.moveSimilarity}
+        structural={structural}
         onMoveSettingsChange={(moveSettings) => updateSettings(moveSettings)}
         onDiffOptionsChange={(options) => updateSettings(options)}
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}

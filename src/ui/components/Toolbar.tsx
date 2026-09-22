@@ -5,14 +5,26 @@ import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
 import { AUTO_BLINK_OPTIONS, parseAutoBlink, type AutoBlink, type BlinkState, type ViewMode } from '../../blink'
 import { MIN_LINES_OPTIONS, SIMILARITY_OPTIONS } from '../../moves'
+import type { DifftAvailability } from '../../structural'
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   split: 'Split',
   unified: 'Unified',
   blink: 'Blink',
+  structural: 'Structural',
 }
 
 const BLINK_HINT = 'Space swaps before and after, n and p jump between changes'
+const STRUCTURAL_HINT = 'Compares syntax trees, so a pure reformat shows no change'
+const STRUCTURAL_MISSING = 'difftastic not available'
+
+/** The hint a mode carries, or the reason it cannot be chosen. */
+function modeTitle(mode: ViewMode, structural: DifftAvailability): string | undefined {
+  if (mode === 'blink') return BLINK_HINT
+  if (mode !== 'structural') return undefined
+  if (!structural.available) return structural.reason ?? STRUCTURAL_MISSING
+  return STRUCTURAL_HINT
+}
 
 /** A similarity floor of 1 pairs only blocks that arrived unchanged. */
 const SIMILARITY_LABELS: Record<string, string> = {
@@ -51,6 +63,7 @@ interface ToolbarProps {
   onAutoBlinkChange: (interval: AutoBlink) => void
   moveMinLines: number
   moveSimilarity: number
+  structural: DifftAvailability
   onMoveSettingsChange: (settings: { moveMinLines?: number; moveSimilarity?: number }) => void
   onContextChange: (context: ContextWidth) => void
   onLineDiffChange: (mode: LineDiffMode) => void
@@ -84,6 +97,7 @@ export function Toolbar({
   onAutoBlinkChange,
   moveMinLines,
   moveSimilarity,
+  structural,
   onMoveSettingsChange,
   onContextChange,
   onLineDiffChange,
@@ -137,7 +151,8 @@ export function Toolbar({
             <button
               key={mode}
               className={`btn btn-sm ${diffStyle === mode ? 'btn-active' : ''}`}
-              title={mode === 'blink' ? BLINK_HINT : undefined}
+              title={modeTitle(mode, structural)}
+              disabled={mode === 'structural' && !structural.available}
               onClick={() => onDiffStyleChange(mode)}
             >
               {VIEW_MODE_LABELS[mode]}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { ContextWidth } from '../../context'
+import type { DifftAvailability } from '../../structural'
 
 export interface BinaryFileInfo {
   path: string
@@ -14,7 +15,11 @@ interface DiffData {
   binaryFiles: BinaryFileInfo[]
   tabSizeMap: Record<string, number>
   untrackedFiles: string[]
+  structural: DifftAvailability
 }
+
+/** Until the server has answered, the structural mode stays out of reach. */
+const UNKNOWN_DIFFT: DifftAvailability = { available: false, reason: 'Looking for difftastic…' }
 
 export interface DiffOptions {
   staged: boolean
@@ -49,6 +54,7 @@ export function useDiff(options: DiffOptions) {
     binaryFiles: data?.binaryFiles ?? [],
     tabSizeMap: data?.tabSizeMap ?? {},
     untrackedFiles: data?.untrackedFiles ?? [],
+    structural: data?.structural ?? UNKNOWN_DIFFT,
     loading,
     error,
   }

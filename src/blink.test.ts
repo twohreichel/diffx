@@ -39,8 +39,8 @@ function parsedFiles() {
 }
 
 describe('view mode', () => {
-  it('offers split, unified and blink', () => {
-    expect(VIEW_MODES).toEqual(['split', 'unified', 'blink'])
+  it('offers split, unified, blink and structural', () => {
+    expect(VIEW_MODES).toEqual(['split', 'unified', 'blink', 'structural'])
   })
 
   it('starts on split', () => {
@@ -53,8 +53,13 @@ describe('view mode', () => {
     expect(rendererDiffStyle('unified')).toBe('unified')
   })
 
+  it('keeps the before and after columns in structural mode', () => {
+    expect(rendererDiffStyle('structural')).toBe('split')
+  })
+
   it('keeps a stored mode and rejects an unknown one', () => {
     expect(parseViewMode('blink')).toBe('blink')
+    expect(parseViewMode('structural')).toBe('structural')
     for (const raw of [undefined, null, '', 'flicker', 7]) {
       expect(parseViewMode(raw)).toBe('split')
     }

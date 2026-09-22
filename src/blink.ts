@@ -1,8 +1,8 @@
 import type { ChangeContent, ContextContent } from '@pierre/diffs'
 
-export type ViewMode = 'split' | 'unified' | 'blink'
+export type ViewMode = 'split' | 'unified' | 'blink' | 'structural'
 
-export const VIEW_MODES: readonly ViewMode[] = ['split', 'unified', 'blink']
+export const VIEW_MODES: readonly ViewMode[] = ['split', 'unified', 'blink', 'structural']
 export const DEFAULT_VIEW_MODE: ViewMode = 'split'
 
 export type BlinkState = 'before' | 'after'
@@ -12,7 +12,7 @@ export type AutoBlink = 'off' | 400 | 800 | 1600
 export const AUTO_BLINK_OPTIONS: readonly AutoBlink[] = ['off', 400, 800, 1600]
 export const DEFAULT_AUTO_BLINK: AutoBlink = 'off'
 
-/** Blink is the split rendering with one of its two columns hidden. */
+/** Blink hides one column of the split grid, structural recolours its rows. */
 export function rendererDiffStyle(mode: ViewMode): 'split' | 'unified' {
   return mode === 'unified' ? 'unified' : 'split'
 }
