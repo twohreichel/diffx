@@ -1,0 +1,47 @@
+{
+    "aligned_lines": [
+        [
+            0,
+            0
+        ],
+        [
+            1,
+            1
+        ],
+        [
+            2,
+            2
+        ]
+    ],
+    "chunks": [
+        [
+            {
+                "lhs": {
+                    "line_number": 1,
+                    "changes": [
+                        {
+                            "start": 0,
+                            "end": 4,
+                            "content": "beta",
+                            "highlight": "normal"
+                        }
+                    ]
+                },
+                "rhs": {
+                    "line_number": 1,
+                    "changes": [
+                        {
+                            "start": 0,
+                            "end": 5,
+                            "content": "gamma",
+                            "highlight": "normal"
+                        }
+                    ]
+                }
+            }
+        ]
+    ],
+    "language": "Text",
+    "path": "notes.zzz",
+    "status": "changed"
+}
