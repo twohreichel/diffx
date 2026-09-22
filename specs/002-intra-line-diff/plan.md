@@ -12,6 +12,45 @@
 | IX Accessibility | PASS — background + underline, not colour alone |
 | X Testing | PASS |
 
+## Decision (T002): the renderer already does this
+
+`@pierre/diffs` ships intra-line diffing. `DiffHunksRenderer` accepts
+`lineDiffType: 'word-alt' | 'word' | 'char' | 'none'` (default `word-alt`) and
+`maxLineDiffLength` (default 1000), runs `diffWordsWithSpace` or `diffChars` from
+the `diff` package in its highlighting worker, and emits the result as
+`additionDecorations` / `deletionDecorations` that compose with the Shiki spans.
+The rendered segments carry `data-diff-span`.
+
+That answers the algorithm, the pairing, the Shiki composition and the bail-out
+below, so the sections that follow describe work the fork does not have to do. The
+fork's part of this feature is the persisted granularity setting, raising the length
+cap to the 2000 characters FR-008 asks for, and the accessibility cue.
+
+Four consequences, recorded rather than applied silently:
+
+- **Three modes are exposed, not four.** `word` maps to `word-alt`, `char` to
+  `char`, `off` to `none`. `word` and `word-alt` differ only in whether adjacent
+  segments are joined, and the joined variant reads better on renamed identifiers,
+  which is what US-2 asks for. A fourth entry would offer a choice nobody can act on.
+- **The granularity control lives in the settings menu**, next to the tab size and
+  soft wrap, not in the toolbar. FR-002 asks for a toggle, not for a toolbar slot,
+  and the toolbar already carries the context stepper from feature 001.
+- **FR-005, the similarity floor, is not implemented.** The renderer computes the
+  intra-line diff inside its worker and offers no hook to suppress it per line pair.
+  Serving the floor would mean turning the renderer's emphasis off and rebuilding the
+  whole feature in the fork, against the finding above. `word-alt` joins adjacent
+  segments, which mitigates the same over-highlighting the floor targets. Reopen this
+  if a real reformat commit still reads badly in T018.
+- **T017 asserts the options the renderer receives**, in both Split and Unified,
+  rather than the rows it draws. Drawing them needs Shiki workers and the virtualizer,
+  and the emphasis itself is dependency behaviour, not fork behaviour.
+
+## Accessibility
+
+The renderer marks segments with `background-color` alone. `unsafeCSS` adds a bottom
+border on `[data-diff-span]`, so the emphasis survives for a reader who cannot
+separate the two background tints (Constitution IX, FR-003).
+
 ## Pairing
 
 Lines must be paired before they can be intra-diffed. Within a hunk, walk the run
