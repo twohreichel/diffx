@@ -31,6 +31,19 @@ Two deviations from the recommendation below, both recorded here rather than sil
   per file and asynchronously, so `full` would fade in file by file. `-U1000000` keeps
   one code path and one consistent render.
 
+**FR-007 is served by a per-file badge, not a marker on a separator row.** The spec
+asks for the marker on the nearest visible boundary row. Those rows live inside the
+renderer's shadow root, behind attributes the dependency does not publish, and the
+list is virtualized, so a marker there needs a `MutationObserver` that re-runs on
+every scroll. The card header is fork-owned, always rendered and needs neither. The
+detection itself is the same pure function either way, so the stronger placement
+stays available if the badge proves too quiet.
+
+**T016 asserts on the model the renderer receives, not on rendered rows.** Whether a
+context row exists is decided by `parsePatchFiles`, which is dependency code. A jsdom
+render of the component would exercise Shiki workers and the virtualizer without
+adding an assertion the model-level test does not already make.
+
 Custom mode (`diffx -- <args>`) keeps its own context: when the user's arguments
 already carry `-U`, `--unified` or `-u`, the server does not append one. Overriding an
 explicit start flag with the persisted default would break existing behaviour, which
