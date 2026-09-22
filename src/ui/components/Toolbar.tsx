@@ -64,6 +64,8 @@ interface ToolbarProps {
   moveMinLines: number
   moveSimilarity: number
   structural: DifftAvailability
+  ignoreComments: boolean
+  onIgnoreCommentsChange: (ignoreComments: boolean) => void
   onMoveSettingsChange: (settings: { moveMinLines?: number; moveSimilarity?: number }) => void
   onContextChange: (context: ContextWidth) => void
   onLineDiffChange: (mode: LineDiffMode) => void
@@ -98,6 +100,8 @@ export function Toolbar({
   moveMinLines,
   moveSimilarity,
   structural,
+  ignoreComments,
+  onIgnoreCommentsChange,
   onMoveSettingsChange,
   onContextChange,
   onLineDiffChange,
@@ -270,6 +274,16 @@ export function Toolbar({
                     ))}
                   </select>
                 </div>
+              )}
+              {diffStyle === 'structural' && (
+                <label className="settings-item">
+                  <input
+                    type="checkbox"
+                    checked={ignoreComments}
+                    onChange={(e) => onIgnoreCommentsChange(e.target.checked)}
+                  />
+                  Ignore comments
+                </label>
               )}
               <div className="settings-item settings-item-spaced">
                 <label htmlFor="move-min-lines-select">Moved block size</label>

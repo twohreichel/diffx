@@ -14,6 +14,7 @@ export interface Settings {
   autoBlink: AutoBlink
   moveMinLines: number
   moveSimilarity: number
+  ignoreComments: boolean
   softWrap: boolean
   browser?: string
 }
@@ -28,6 +29,7 @@ const DEFAULTS: Settings = {
   autoBlink: DEFAULT_AUTO_BLINK,
   moveMinLines: DEFAULT_MOVE_SETTINGS.minLines,
   moveSimilarity: DEFAULT_MOVE_SETTINGS.similarity,
+  ignoreComments: false,
   softWrap: false,
 }
 

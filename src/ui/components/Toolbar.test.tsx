@@ -13,6 +13,7 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
   const onDiffStyleChange = vi.fn()
   const onAutoBlinkChange = vi.fn()
   const onMoveSettingsChange = vi.fn()
+  const onIgnoreCommentsChange = vi.fn()
   render(
     <Toolbar
       repoName="diffx"
@@ -38,6 +39,8 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       moveMinLines={5}
       moveSimilarity={0.8}
       structural={{ available: true, version: '0.71.0' }}
+      ignoreComments={false}
+      onIgnoreCommentsChange={onIgnoreCommentsChange}
       onMoveSettingsChange={onMoveSettingsChange}
       onDiffStyleChange={onDiffStyleChange}
       onDiffOptionsChange={vi.fn()}
@@ -48,7 +51,14 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       {...overrides}
     />,
   )
-  return { onContextChange, onLineDiffChange, onDiffStyleChange, onAutoBlinkChange, onMoveSettingsChange }
+  return {
+    onContextChange,
+    onLineDiffChange,
+    onDiffStyleChange,
+    onAutoBlinkChange,
+    onMoveSettingsChange,
+    onIgnoreCommentsChange,
+  }
 }
 
 async function openSettings(): Promise<void> {
@@ -201,6 +211,19 @@ describe('Toolbar structural mode', () => {
     const { onDiffStyleChange } = renderToolbar()
     await userEvent.click(screen.getByRole('button', { name: 'Structural' }))
     expect(onDiffStyleChange).toHaveBeenCalledWith<[ViewMode]>('structural')
+  })
+
+  it('offers to leave comments out of the comparison', async () => {
+    const { onIgnoreCommentsChange } = renderToolbar({ diffStyle: 'structural' })
+    await openSettings()
+    await userEvent.click(screen.getByLabelText('Ignore comments'))
+    expect(onIgnoreCommentsChange).toHaveBeenCalledWith(true)
+  })
+
+  it('withholds that option outside structural mode', async () => {
+    renderToolbar({ diffStyle: 'split' })
+    await openSettings()
+    expect(screen.queryByLabelText('Ignore comments')).toBeNull()
   })
 
   it('disables the mode and names the installation command when difftastic is absent', () => {

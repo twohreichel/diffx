@@ -268,6 +268,8 @@ export function App() {
         moveMinLines={settings.moveMinLines}
         moveSimilarity={settings.moveSimilarity}
         structural={structural}
+        ignoreComments={settings.ignoreComments}
+        onIgnoreCommentsChange={(ignoreComments) => updateSettings({ ignoreComments })}
         onMoveSettingsChange={(moveSettings) => updateSettings(moveSettings)}
         onDiffOptionsChange={(options) => updateSettings(options)}
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}

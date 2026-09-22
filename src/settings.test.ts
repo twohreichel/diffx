@@ -85,6 +85,15 @@ describe('loadSettings', () => {
     expect(fallback.moveSimilarity).toBe(0.8)
   })
 
+  it('compares comments along with the code unless told otherwise', () => {
+    expect(loadSettings().ignoreComments).toBe(false)
+  })
+
+  it('keeps a stored ignore-comments choice', () => {
+    writeSettings({ ignoreComments: true })
+    expect(loadSettings().ignoreComments).toBe(true)
+  })
+
   it('leaves the other settings untouched', () => {
     writeSettings({ diffStyle: 'unified', defaultTabSize: 2 })
     const settings = loadSettings()
