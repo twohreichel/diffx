@@ -5,6 +5,7 @@ import type { ReviewComment } from '../../types'
 import { CommentForm } from './CommentForm'
 import { CommentBubble } from './CommentBubble'
 import { hiddenAnnotations } from '../hiddenComments'
+import { MAX_LINE_DIFF_LENGTH, lineDiffType, type LineDiffMode } from '../../lineDiff'
 
 interface PendingComment {
   side: AnnotationSide
@@ -17,6 +18,7 @@ interface FileDiffCardProps {
   filePath: string
   annotations: DiffLineAnnotation<ReviewComment>[]
   diffStyle: 'split' | 'unified'
+  lineDiff: LineDiffMode
   tabSize: number
   softWrap: boolean
   viewed: boolean
@@ -31,6 +33,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   filePath,
   annotations,
   diffStyle,
+  lineDiff,
   tabSize,
   softWrap,
   viewed,
@@ -102,7 +105,11 @@ export const FileDiffCard = memo(function FileDiffCard({
               theme: { dark: 'github-dark', light: 'github-light' },
               themeType: 'system',
               overflow: softWrap ? 'wrap' : 'scroll',
-              unsafeCSS: `:host { --diffs-tab-size: ${tabSize}; }`,
+              lineDiffType: lineDiffType(lineDiff),
+              maxLineDiffLength: MAX_LINE_DIFF_LENGTH,
+              // The renderer marks intra-line segments by background alone. The
+              // underline adds the second, non-colour cue Constitution IX asks for.
+              unsafeCSS: `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }`,
             }}
             lineAnnotations={allAnnotations}
             renderHeaderMetadata={() => (

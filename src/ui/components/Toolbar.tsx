@@ -2,6 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { GitBranch, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
+import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
+
+const LINE_DIFF_LABELS: Record<LineDiffMode, string> = {
+  word: 'Word',
+  char: 'Character',
+  off: 'Off',
+}
 
 interface ToolbarProps {
   repoName: string
@@ -13,6 +20,7 @@ interface ToolbarProps {
   diffStyle: 'split' | 'unified'
   context: ContextWidth
   contextDisabled: boolean
+  lineDiff: LineDiffMode
   diffOptions: DiffOptions
   defaultTabSize: number
   softWrap: boolean
@@ -20,6 +28,7 @@ interface ToolbarProps {
   customMode: boolean
   onDiffStyleChange: (style: 'split' | 'unified') => void
   onContextChange: (context: ContextWidth) => void
+  onLineDiffChange: (mode: LineDiffMode) => void
   onDiffOptionsChange: (options: DiffOptions) => void
   onDefaultTabSizeChange: (size: number) => void
   onSoftWrapChange: (softWrap: boolean) => void
@@ -37,6 +46,7 @@ export function Toolbar({
   diffStyle,
   context,
   contextDisabled,
+  lineDiff,
   diffOptions,
   defaultTabSize,
   softWrap,
@@ -44,6 +54,7 @@ export function Toolbar({
   customMode,
   onDiffStyleChange,
   onContextChange,
+  onLineDiffChange,
   onDiffOptionsChange,
   onDefaultTabSizeChange,
   onSoftWrapChange,
@@ -171,6 +182,21 @@ export function Toolbar({
                 />
                 Soft wrap
               </label>
+              <div className="settings-item settings-item-spaced">
+                <label htmlFor="line-diff-select">Intra-line diff</label>
+                <select
+                  id="line-diff-select"
+                  className="settings-select"
+                  value={lineDiff}
+                  onChange={(e) => onLineDiffChange(e.target.value as LineDiffMode)}
+                >
+                  {LINE_DIFF_MODES.map((mode) => (
+                    <option key={mode} value={mode}>
+                      {LINE_DIFF_LABELS[mode]}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="settings-item settings-item-spaced">
                 <span>Default tab size</span>
                 <select

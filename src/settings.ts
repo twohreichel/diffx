@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { DEFAULT_CONTEXT, parseContextWidth, type ContextWidth } from './context.js'
+import { DEFAULT_LINE_DIFF, parseLineDiffMode, type LineDiffMode } from './lineDiff.js'
 
 const CONFIG_DIR = join(homedir(), '.config', 'diffx')
 const SETTINGS_FILE = join(CONFIG_DIR, 'settings.json')
@@ -12,6 +13,7 @@ export interface Settings {
   diffStyle: 'split' | 'unified'
   defaultTabSize: number
   context: ContextWidth
+  lineDiff: LineDiffMode
   browser?: string
 }
 
@@ -21,13 +23,19 @@ const DEFAULTS: Settings = {
   diffStyle: 'split',
   defaultTabSize: 4,
   context: DEFAULT_CONTEXT,
+  lineDiff: DEFAULT_LINE_DIFF,
 }
 
 export function loadSettings(): Settings {
   try {
     const data = readFileSync(SETTINGS_FILE, 'utf-8')
     const stored = JSON.parse(data)
-    return { ...DEFAULTS, ...stored, context: parseContextWidth(stored.context) }
+    return {
+      ...DEFAULTS,
+      ...stored,
+      context: parseContextWidth(stored.context),
+      lineDiff: parseLineDiffMode(stored.lineDiff),
+    }
   } catch {
     return { ...DEFAULTS }
   }

@@ -225,12 +225,14 @@ export function App() {
         diffOptions={{ staged: settings.staged, untracked: settings.untracked, context: settings.context }}
         context={settings.context}
         contextDisabled={contextDisabled}
+        lineDiff={settings.lineDiff}
         defaultTabSize={settings.defaultTabSize}
         softWrap={settings.softWrap}
         browser={settings.browser}
         customMode={customMode}
         onDiffStyleChange={(style) => updateSettings({ diffStyle: style })}
         onContextChange={handleContextChange}
+        onLineDiffChange={(lineDiff) => updateSettings({ lineDiff })}
         onDiffOptionsChange={(options) => updateSettings(options)}
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}
         onSoftWrapChange={(softWrap) => updateSettings({ softWrap })}
@@ -264,6 +266,7 @@ export function App() {
             <DiffViewer
               files={displayFiles}
               diffStyle={settings.diffStyle}
+              lineDiff={settings.lineDiff}
               tabSizeMap={tabSizeMap}
               defaultTabSize={settings.defaultTabSize}
               softWrap={settings.softWrap}

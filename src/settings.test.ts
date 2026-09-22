@@ -40,6 +40,17 @@ describe('loadSettings', () => {
     expect(loadSettings().context).toBe(3)
   })
 
+  it('defaults intra-line granularity to word', () => {
+    expect(loadSettings().lineDiff).toBe('word')
+  })
+
+  it('keeps a stored granularity and rejects an unknown one', () => {
+    writeSettings({ lineDiff: 'char' })
+    expect(loadSettings().lineDiff).toBe('char')
+    writeSettings({ lineDiff: 'grapheme' })
+    expect(loadSettings().lineDiff).toBe('word')
+  })
+
   it('leaves the other settings untouched', () => {
     writeSettings({ diffStyle: 'unified', defaultTabSize: 2 })
     const settings = loadSettings()

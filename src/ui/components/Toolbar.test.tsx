@@ -4,9 +4,11 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Toolbar } from './Toolbar'
 import type { ContextWidth } from '../../context'
+import type { LineDiffMode } from '../../lineDiff'
 
 function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
   const onContextChange = vi.fn()
+  const onLineDiffChange = vi.fn()
   render(
     <Toolbar
       repoName="diffx"
@@ -23,6 +25,8 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       context={3}
       contextDisabled={false}
       onContextChange={onContextChange}
+      lineDiff="word"
+      onLineDiffChange={onLineDiffChange}
       onDiffStyleChange={vi.fn()}
       onDiffOptionsChange={vi.fn()}
       onDefaultTabSizeChange={vi.fn()}
@@ -32,7 +36,11 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       {...overrides}
     />,
   )
-  return { onContextChange }
+  return { onContextChange, onLineDiffChange }
+}
+
+async function openSettings(): Promise<void> {
+  await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
 }
 
 function contextButton(label: string): HTMLButtonElement {
@@ -74,5 +82,27 @@ describe('Toolbar context control', () => {
     renderToolbar()
     expect(screen.getByRole('button', { name: 'Split' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Unified' })).toBeInTheDocument()
+  })
+})
+
+describe('Toolbar intra-line granularity', () => {
+  it('offers word, character and off', async () => {
+    renderToolbar()
+    await openSettings()
+    const options = [...screen.getByLabelText('Intra-line diff').querySelectorAll('option')]
+    expect(options.map((option) => option.value)).toEqual(['word', 'char', 'off'])
+  })
+
+  it('shows the granularity in force', async () => {
+    renderToolbar({ lineDiff: 'char' })
+    await openSettings()
+    expect(screen.getByLabelText('Intra-line diff')).toHaveValue('char')
+  })
+
+  it('reports the chosen granularity', async () => {
+    const { onLineDiffChange } = renderToolbar()
+    await openSettings()
+    await userEvent.selectOptions(screen.getByLabelText('Intra-line diff'), 'char')
+    expect(onLineDiffChange).toHaveBeenCalledWith<[LineDiffMode]>('char')
   })
 })

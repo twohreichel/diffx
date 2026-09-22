@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { DEFAULT_CONTEXT, type ContextWidth } from '../../context'
+import { DEFAULT_LINE_DIFF, type LineDiffMode } from '../../lineDiff'
 
 export interface Settings {
   staged: boolean
@@ -7,6 +8,7 @@ export interface Settings {
   diffStyle: 'split' | 'unified'
   defaultTabSize: number
   context: ContextWidth
+  lineDiff: LineDiffMode
   softWrap: boolean
   browser?: string
 }
@@ -17,6 +19,7 @@ const DEFAULTS: Settings = {
   diffStyle: 'split',
   defaultTabSize: 4,
   context: DEFAULT_CONTEXT,
+  lineDiff: DEFAULT_LINE_DIFF,
   softWrap: false,
 }
 

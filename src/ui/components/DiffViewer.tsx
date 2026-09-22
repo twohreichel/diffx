@@ -2,12 +2,14 @@ import { memo, useMemo } from 'react'
 import type { FileDiffMetadata, DiffLineAnnotation, AnnotationSide } from '@pierre/diffs'
 import type { ReviewComment } from '../../types'
 import type { BinaryFileInfo } from '../hooks/useDiff'
+import type { LineDiffMode } from '../../lineDiff'
 import { FileDiffCard } from './FileDiffCard'
 import { BinaryFileDiff } from './BinaryFileDiff'
 
 interface DiffViewerProps {
   files: FileDiffMetadata[]
   diffStyle: 'split' | 'unified'
+  lineDiff: LineDiffMode
   tabSizeMap: Record<string, number>
   defaultTabSize: number
   softWrap: boolean
@@ -24,6 +26,7 @@ const emptyAnnotations: DiffLineAnnotation<ReviewComment>[] = []
 export const DiffViewer = memo(function DiffViewer({
   files,
   diffStyle,
+  lineDiff,
   tabSizeMap,
   defaultTabSize,
   softWrap,
@@ -87,6 +90,7 @@ export const DiffViewer = memo(function DiffViewer({
             filePath={filePath}
             annotations={fileAnnotationsMap.get(filePath) ?? emptyAnnotations}
             diffStyle={diffStyle}
+            lineDiff={lineDiff}
             tabSize={tabSizeMap[filePath] ?? defaultTabSize}
             softWrap={softWrap}
             viewed={viewedFiles.has(filePath)}
