@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { basename, join, resolve } from 'node:path'
 import { readFileSync, lstatSync, readlinkSync } from 'node:fs'
 import { isSafePath } from './path.js'
+import { contextArgs, hasContextFlag, type ContextWidth } from './context.js'
 import { parseSync as parseEditorConfig, type ProcessedFileConfig } from 'editorconfig'
 
 const IMAGE_EXTENSIONS = new Set([
@@ -114,20 +115,23 @@ export function getBranchName(): string {
 // (e.g. diff.external = difftastic, color.ui = always).
 const DIFF_FLAGS = ['--no-ext-diff', '--no-color'] as const
 
-export function getCustomGitDiff(args: string[]): string {
-  return execFileSync('git', ['diff', ...DIFF_FLAGS, ...args], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
+export function getCustomGitDiff(args: string[], context?: ContextWidth): string {
+  // An explicit width in the user's own arguments outranks the live control.
+  const width = context !== undefined && !hasContextFlag(args) ? contextArgs(context) : []
+  return execFileSync('git', ['diff', ...DIFF_FLAGS, ...width, ...args], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
 }
 
-export function getGitDiff(options: { staged?: boolean; untracked?: boolean } = {}): string {
+export function getGitDiff(options: { staged?: boolean; untracked?: boolean; context?: ContextWidth } = {}): string {
   const parts: string[] = []
+  const width = options.context !== undefined ? contextArgs(options.context) : []
 
   // unstaged changes (always included as the base)
-  const unstaged = execFileSync('git', ['diff', ...DIFF_FLAGS], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
+  const unstaged = execFileSync('git', ['diff', ...DIFF_FLAGS, ...width], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
   if (unstaged) parts.push(unstaged)
 
   // staged changes
   if (options.staged) {
-    const staged = execFileSync('git', ['diff', ...DIFF_FLAGS, '--staged'], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
+    const staged = execFileSync('git', ['diff', ...DIFF_FLAGS, ...width, '--staged'], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
     if (staged) parts.push(staged)
   }
 

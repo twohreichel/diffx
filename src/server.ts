@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { getGitDiff, getCustomGitDiff, getRepoName, getBranchName, getFileContent, getBlobContent, getWorktreeFileContent, isImageFile, getTabSizeForFiles, getUntrackedFilePaths } from './git.js'
 import { loadSettings, saveSettings } from './settings.js'
+import { parseContextWidth } from './context.js'
 import { InMemoryCommentStore } from './comments.js'
 import type { CommentStore } from './comments.js'
 import { isSafePath } from './path.js'
@@ -100,10 +101,11 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
     let patch: string
     const staged = c.req.query('staged') === 'true'
     const untracked = c.req.query('untracked') === 'true'
+    const context = parseContextWidth(c.req.query('context'))
     if (isCustomMode) {
-      patch = getCustomGitDiff(customDiffArgs)
+      patch = getCustomGitDiff(customDiffArgs, context)
     } else {
-      patch = getGitDiff({ staged, untracked })
+      patch = getGitDiff({ staged, untracked, context })
     }
     const repoName = getRepoName()
     const branch = getBranchName()

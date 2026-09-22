@@ -13,6 +13,29 @@
 | VIII Keyboard | PASS |
 | X Testing | PASS |
 
+## Decision (T002): Design A, uniformly
+
+The recon answered the open question: `src/ui/hooks/useDiff.ts` already re-fetches
+`/api/diff` whenever a setting changes, so a context parameter rides along for free.
+**Design A is implemented for all four steps**, `full` included, via `-U1000000`.
+
+Two deviations from the recommendation below, both recorded here rather than silently:
+
+- **No client-side narrowing fast path.** `git diff` on a local repository answers in
+  tens of milliseconds, an order of magnitude inside the 1 s budget of Constitution VI.
+  A second rendering path that hides rows would have to reimplement hunk merging for
+  the 10 → 0 case and would diverge from the server's output. The saving is not
+  measurable, the cost is a permanent second source of truth.
+- **`full` is not served by the renderer's `expandUnchanged` option**, although the
+  recon found it. That option needs `isPartial: false`, which `useFullDiffs` supplies
+  per file and asynchronously, so `full` would fade in file by file. `-U1000000` keeps
+  one code path and one consistent render.
+
+Custom mode (`diffx -- <args>`) keeps its own context: when the user's arguments
+already carry `-U`, `--unified` or `-u`, the server does not append one. Overriding an
+explicit start flag with the persisted default would break existing behaviour, which
+Constitution II forbids.
+
 ## Key decision: re-fetch vs client-side
 
 Two viable designs. Pick based on the answer recorded in
