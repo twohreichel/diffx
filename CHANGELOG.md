@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.17.0
+
+### Minor Changes
+
+- c49f478: Add an A/B blink view mode. Blink shows one complete state of the file at a
+  time, `Space` swaps between before and after, `n` and `p` jump between changes,
+  and an optional auto blink cycles at 400, 800 or 1600 ms. The current state is
+  named in the toolbar and repeated by a coloured pane edge, image files switch
+  with the same key, and `prefers-reduced-motion` hides the automatic cycle.
+- f8877e8: Add a change map panel listing the changed symbols of the whole diff
+
+  A side panel groups every changed line under the symbol it sits in — function,
+  method, class or type — and the symbols under their file. Files are ordered by
+  how much of the diff they carry, each entry shows its counts and a bar sized
+  against the largest change, and clicking one jumps to its first changed line.
+  Moved symbols and files that only got reformatted carry a tag when the move and
+  structural features supply the data.
+
+  The panel opens from the toolbar or with `m`, filters by change kind and by path
+  substring, and the file tree follows the same filters. Languages without a
+  symbol pattern fall back to one entry for the whole file and the panel says so.
+  The map is built after the diff is on screen, so it never delays the rows.
+
+- a028192: Make intra-line emphasis configurable. A new setting switches between word and
+  character granularity or turns the emphasis off, the choice is persisted, lines
+  up to 2000 characters are diffed inside, and emphasized segments carry an
+  underline so the marking does not rest on colour alone.
+- 23df459: Add a live context width control to the toolbar. Context can be switched between
+  0, 3, 10 and full lines without restarting diffx, with `[` and `]` as shortcuts.
+  The chosen width is persisted, the view keeps the nearest changed line in place
+  across a change, and comments on lines a narrower width hides are counted in the
+  file header.
+- c367761: Mark blocks that only moved, so the diff stops reading as a rewrite
+
+  A block of at least five lines that leaves one place and arrives in another —
+  inside a file or across two files — now renders on a neutral background with a
+  violet bar instead of the addition and deletion colours. Both ends carry a badge
+  naming the counterpart, the pair id and whether the block arrived unchanged, and
+  the badge jumps to the other end.
+
+  Blocks edited on the way still pair as long as they keep the configured share of
+  their lines, and the lines that read differently keep their addition colour. Two
+  toolbar settings control it: the smallest block reported as a move, and the
+  similarity a moved-and-edited block must reach. Detection runs after the first
+  paint, so the diff never waits for it.
+
+- 8244fe2: Add a structural view mode that compares syntax trees
+
+  A fourth mode hands both states of the open file to difftastic and colours only
+  the rows it reports as structurally changed. A pure reformat keeps its `+`/`-`
+  rows but shows them all unhighlighted, and the file tree marks such files with a
+  `≡`. Each file header carries a switch that overrides the mode for that file
+  alone, and a setting lets the comparison skip comments.
+
+  The comparison is asked for per file and only once the file scrolls into view,
+  results are cached, and a request is aborted as soon as its file is left. Where
+  difftastic is missing, finds no grammar for the file or returns something this
+  fork cannot read, the mode falls back to the line-based rows and names the
+  reason above them.
+
 ## 0.16.0
 
 ### Minor Changes
