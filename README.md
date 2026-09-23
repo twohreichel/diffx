@@ -34,6 +34,9 @@ which -a diffx
 diffx --version
 ```
 
+The fork stays ahead of the published package, so the version tells the two
+apart: `0.17.0` is this fork, `0.16.x` the version from npm.
+
 A global install lands in the node environment that is active at that moment.
 Where an earlier diffx was installed under a different node version or through
 Homebrew's node, that binary stays on the PATH and can still win — remove it
