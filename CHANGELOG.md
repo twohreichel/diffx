@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.0
+
+### Minor Changes
+
+- bd13c36: Edit a review comment in place, mark it as resolved or reopen it, and delete it in either state. Resolved comments stay visible in the review but are left out of the copied comment block.
+- 983f27c: Comment on a range of lines: shift-click the gutter button to grow the open comment to the clicked line. The range is named in the form, in the bubble and in the copied comment block.
+- da34bf5: Look up where a name is declared: ctrl- or cmd-click a token in the diff and a popup lists every declaration of it in the repository, with the first lines of each and a jump to the file.
+
+### Patch Changes
+
+- 547bd77: Smoother scrolling through a large diff: a card that is off screen skips layout and paint, the renderer keeps its options and annotations between renders instead of redrawing the file, and only a structural comparison watches for a file coming into view.
+
 ## 0.17.0
 
 ### Minor Changes
