@@ -35,7 +35,7 @@ diffx --version
 ```
 
 The fork stays ahead of the published package, so the version tells the two
-apart: `0.17.0` is this fork, `0.16.x` the version from npm.
+apart: `0.18.0` is this fork, `0.16.x` the version from npm.
 
 A global install lands in the node environment that is active at that moment.
 Where an earlier diffx was installed under a different node version or through
@@ -114,11 +114,13 @@ Examples:
 - **Moved block detection** — Mark a block that only changed place and jump to its counterpart
 - **Structural view** — Compare syntax trees through difftastic, so a pure reformat shows no change
 - **Change map** — A panel of the changed symbols grouped by file, sized, tagged and filterable
+- **Definition lookup** — Ctrl- or cmd-click a name in the diff to see where it is declared, anywhere in the repository
 - **Syntax highlighting** — Powered by Shiki with GitHub themes
 - **File tree** — Hierarchical file browser with search filter and file change-type icons
-- **Inline comments** — Click the `+` button on any line to add a review comment
+- **Inline comments** — Click the `+` button on any line to add a review comment, shift-click a second line to cover a range
+- **Comment editing** — Edit a comment in its own bubble, mark it as resolved and reopen it later
 - **Comment replies** — AI agents can reply to comments via API, displayed with bot avatar in the UI
-- **Comment status tracker** — Sidebar widget showing open, replied, and resolved comment counts with click-to-navigate links
+- **Comment status tracker** — Sidebar widget showing open, replied, and resolved comment counts, with resolve and delete on every entry
 - **Copy comments** — One-click copy all comments as structured XML for AI coding agents
 - **Image preview** — Side-by-side comparison for added, modified, and deleted images
 - **Viewed tracking** — Mark files as reviewed to track progress
@@ -146,7 +148,7 @@ This null check removal may cause a bug when `input` is undefined.
 </code-review-comments>
 ```
 
-Each comment includes the commented code line with a `+`/`-` prefix indicating whether it's an added or removed line.
+Each comment includes the commented code line with a `+`/`-` prefix indicating whether it's an added or removed line. A comment that covers several lines carries the range, as in `<comment line="42-48">`. Resolved comments are left out, so the block always describes what is still open.
 
 ## Agent Skills
 
