@@ -24,6 +24,10 @@ import { DiffViewer } from './components/DiffViewer'
 import { FileTree } from './components/FileTree'
 import { ChangeMap } from './components/ChangeMap'
 import { CommentTracker } from './components/CommentTracker'
+import { DefinitionPopup } from './components/DefinitionPopup'
+import { useDefinitions } from './hooks/useDefinitions'
+import { symbolFromPath } from './symbolAt'
+import type { Definition } from '../definitions'
 import { SidebarStorage } from './sidebarStorage'
 
 function useWindowSize({ factor }: { factor: number }) {
@@ -201,6 +205,30 @@ export function App() {
     jumpToMove(run)
   }, [])
 
+  const { lookup, find, close: closeLookup } = useDefinitions()
+
+  // A ctrl- or cmd-click on a token asks where that name is declared, in the
+  // whole repository rather than only in the diff.
+  const handleDiffClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
+      const name = symbolFromPath(event.nativeEvent.composedPath())
+      if (!name) return
+      event.preventDefault()
+      find(name)
+    },
+    [find],
+  )
+
+  const handleDefinitionJump = useCallback(
+    (definition: Definition) => {
+      setActiveFile(definition.path)
+      jumpToMove({ path: definition.path, side: 'additions', startLine: definition.line })
+      closeLookup()
+    },
+    [closeLookup],
+  )
+
   const mapFilter = useMemo<MapFilter>(
     () => ({ tag: settings.mapTag, path: settings.mapPath }),
     [settings.mapTag, settings.mapPath],
@@ -371,7 +399,7 @@ export function App() {
             </aside>
           </Resizable>
         )}
-        <main className={blinkMode ? `main blink-pane blink-pane-${blinkState}` : 'main'}>
+        <main className={blinkMode ? `main blink-pane blink-pane-${blinkState}` : 'main'} onClick={handleDiffClick}>
           <Virtualizer className="main-scroll" contentClassName="main-content">
             <DiffViewer
               files={displayFiles}
@@ -399,6 +427,15 @@ export function App() {
             />
           </Virtualizer>
         </main>
+        {lookup && (
+          <DefinitionPopup
+            name={lookup.name}
+            loading={lookup.loading}
+            definitions={lookup.definitions}
+            onClose={closeLookup}
+            onJump={handleDefinitionJump}
+          />
+        )}
         {settings.mapOpen && (
           <ChangeMap
             groups={visibleGroups}

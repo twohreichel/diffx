@@ -9,6 +9,7 @@ import { InMemoryCommentStore } from './comments.js'
 import type { CommentStore } from './comments.js'
 import { isSafePath } from './path.js'
 import { detectDifft, structuralDiff, type DifftAvailability } from './structural.js'
+import { findDefinitions } from './definitions.js'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -228,6 +229,12 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
       viewedFiles.delete(filePath)
     }
     return c.json({ ok: true })
+  })
+
+  app.get('/api/definitions', (c) => {
+    const name = c.req.query('name')
+    if (!name) return c.json({ error: 'Missing name' }, 400)
+    return c.json({ name, definitions: findDefinitions(name) })
   })
 
   app.get('/api/comments', async (c) => {
