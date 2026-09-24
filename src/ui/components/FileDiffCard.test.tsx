@@ -56,6 +56,8 @@ function renderCard(overrides: Partial<Parameters<typeof FileDiffCard>[0]> = {})
       onViewedChange={vi.fn()}
       onAddComment={vi.fn()}
       onDeleteComment={vi.fn()}
+      onEditComment={vi.fn()}
+      onCommentStatusChange={vi.fn()}
       {...overrides}
     />,
   )

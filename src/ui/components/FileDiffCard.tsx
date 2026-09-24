@@ -66,6 +66,8 @@ interface FileDiffCardProps {
   onViewedChange: (filePath: string, viewed: boolean) => void
   onAddComment: (filePath: string, side: AnnotationSide, lineNumber: number, lineContent: string, body: string) => void
   onDeleteComment: (id: string) => void
+  onEditComment: (id: string, body: string) => void
+  onCommentStatusChange: (id: string, status: ReviewComment['status']) => void
 }
 
 export const FileDiffCard = memo(function FileDiffCard({
@@ -88,6 +90,8 @@ export const FileDiffCard = memo(function FileDiffCard({
   onViewedChange,
   onAddComment,
   onDeleteComment,
+  onEditComment,
+  onCommentStatusChange,
 }: FileDiffCardProps) {
   const [pending, setPending] = useState<PendingComment | null>(null)
   const card = useRef<HTMLDivElement>(null)
@@ -245,6 +249,8 @@ export const FileDiffCard = memo(function FileDiffCard({
                 <CommentBubble
                   comment={annotation.metadata as ReviewComment}
                   onDelete={onDeleteComment}
+                  onEdit={onEditComment}
+                  onStatusChange={onCommentStatusChange}
                 />
               )
             }}

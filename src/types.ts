@@ -9,6 +9,8 @@ export interface ReviewComment {
   filePath: string
   side: 'deletions' | 'additions'
   lineNumber: number
+  /** Last line of the range, absent while the comment sits on a single line. */
+  endLine?: number
   lineContent: string
   body: string
   status: 'open' | 'resolved'

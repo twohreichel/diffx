@@ -3,12 +3,15 @@ import {
   CheckCircle2,
   Reply,
   Circle,
+  RotateCcw,
 } from 'lucide-react'
 import type { ReviewComment } from '../../types'
 import { timeAgo, truncate, fileName } from '../utils'
 
 interface CommentTrackerProps {
   comments: ReviewComment[]
+  onStatusChange: (id: string, status: ReviewComment['status']) => void
+  onDelete: (id: string) => void
 }
 
 type CommentStatus = 'open' | 'replied' | 'resolved'
@@ -42,7 +45,7 @@ function StatusBadge({ status }: { status: CommentStatus }) {
   }
 }
 
-export function CommentTracker({ comments }: CommentTrackerProps) {
+export function CommentTracker({ comments, onStatusChange, onDelete }: CommentTrackerProps) {
   if (comments.length === 0) return null
 
   const sorted = [...comments].sort((a, b) => b.createdAt - a.createdAt)
@@ -80,6 +83,24 @@ export function CommentTracker({ comments }: CommentTrackerProps) {
                 </div>
                 <div className="ct-item-body">{truncate(comment.body, 80)}</div>
               </a>
+              <div className="ct-item-actions">
+                <button
+                  className="ct-item-action"
+                  aria-label={status === 'resolved' ? 'Reopen comment' : 'Mark as resolved'}
+                  title={status === 'resolved' ? 'Reopen comment' : 'Mark as resolved'}
+                  onClick={() => onStatusChange(comment.id, status === 'resolved' ? 'open' : 'resolved')}
+                >
+                  {status === 'resolved' ? <RotateCcw size={12} /> : <CheckCircle2 size={12} />}
+                </button>
+                <button
+                  className="ct-item-action"
+                  aria-label="Delete comment"
+                  title="Delete comment"
+                  onClick={() => onDelete(comment.id)}
+                >
+                  &times;
+                </button>
+              </div>
             </li>
           )
         })}

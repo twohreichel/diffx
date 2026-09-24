@@ -49,7 +49,7 @@ export function App() {
     // Blink shows one complete state at a time, which only full context provides.
     context: blinkMode ? 'full' : settings.context,
   })
-  const { comments, addComment, removeComment, copyAllComments } =
+  const { comments, addComment, removeComment, editComment, setCommentStatus, copyAllComments } =
     useComments()
   const [activeFile, setActiveFile] = useState<string | null>(null)
   const [sidebar, setSidebar] = useState(() => SidebarStorage.load())
@@ -288,7 +288,9 @@ export function App() {
         collapsed={sidebar.collapsed}
         onToggleCollapse={handleToggleCollapse}
       />
-      {!sidebar.collapsed && <CommentTracker comments={comments} />}
+      {!sidebar.collapsed && (
+        <CommentTracker comments={comments} onStatusChange={setCommentStatus} onDelete={removeComment} />
+      )}
     </div>
   )
 
@@ -392,6 +394,8 @@ export function App() {
               fileAnnotationsMap={fileAnnotationsMap}
               onAddComment={addComment}
               onDeleteComment={removeComment}
+              onEditComment={editComment}
+              onCommentStatusChange={setCommentStatus}
             />
           </Virtualizer>
         </main>

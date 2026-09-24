@@ -679,6 +679,36 @@ body {
     }
 }
 
+.comment-bubble-action {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.comment-bubble:hover .comment-bubble-action {
+    opacity: 1;
+}
+
+.comment-bubble-action:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.comment-bubble-range {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
 .comment-resolved {
     opacity: 0.6;
 }
@@ -1090,7 +1120,41 @@ body {
 }
 
 .ct-item {
+    position: relative;
     border-bottom: 1px solid var(--border);
+}
+
+.ct-item-actions {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.ct-item:hover .ct-item-actions {
+    opacity: 1;
+}
+
+.ct-item-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.ct-item-action:hover {
+    color: var(--text);
 }
 
 .ct-item-link {
