@@ -17,3 +17,13 @@ export interface ReviewComment {
   createdAt: number
   replies: CommentReply[]
 }
+
+/** What a new comment needs before the server gives it an id. */
+export interface NewComment {
+  filePath: string
+  side: ReviewComment['side']
+  lineNumber: number
+  endLine?: number
+  lineContent: string
+  body: string
+}

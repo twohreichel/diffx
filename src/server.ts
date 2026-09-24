@@ -242,6 +242,7 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
       filePath: body.filePath,
       side: body.side,
       lineNumber: body.lineNumber,
+      endLine: body.endLine,
       lineContent: body.lineContent,
       body: body.body,
       status: 'open' as const,

@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import { FileDiff } from '@pierre/diffs/react'
 import type { DiffLineAnnotation, FileDiffMetadata, AnnotationSide } from '@pierre/diffs'
-import type { ReviewComment } from '../../types'
+import type { NewComment, ReviewComment } from '../../types'
 import { CommentForm } from './CommentForm'
 import { CommentBubble } from './CommentBubble'
 import { hiddenAnnotations } from '../hiddenComments'
+import { extendPending, type PendingComment } from '../pendingRange'
 import { MAX_LINE_DIFF_LENGTH, lineDiffType, type LineDiffMode } from '../../lineDiff'
 import { blinkCSS, rendererDiffStyle, type BlinkState, type ViewMode } from '../../blink'
 import { movesCSS, type MovePair, type MoveRun } from '../../moves'
@@ -20,11 +21,6 @@ function structuralLine(structural: StructuralState): string {
   if (structural.loading) return STRUCTURAL_LOADING
   if (structural.reason) return structural.reason
   return structural.result ? structuralNotice(structural.result) : ''
-}
-
-interface PendingComment {
-  side: AnnotationSide
-  lineNumber: number
 }
 
 interface MoveMarker {
@@ -64,7 +60,7 @@ interface FileDiffCardProps {
   softWrap: boolean
   viewed: boolean
   onViewedChange: (filePath: string, viewed: boolean) => void
-  onAddComment: (filePath: string, side: AnnotationSide, lineNumber: number, lineContent: string, body: string) => void
+  onAddComment: (comment: NewComment) => void
   onDeleteComment: (id: string) => void
   onEditComment: (id: string, body: string) => void
   onCommentStatusChange: (id: string, status: ReviewComment['status']) => void
@@ -236,9 +232,17 @@ export const FileDiffCard = memo(function FileDiffCard({
               if ('_pending' in annotation.metadata) {
                 return (
                   <CommentForm
+                    lineNumber={pending!.lineNumber}
+                    endLine={pending!.endLine}
                     onSubmit={(body) => {
-                      const lineContent = getLineContent(pending!.side, pending!.lineNumber)
-                      onAddComment(filePath, pending!.side, pending!.lineNumber, lineContent, body)
+                      onAddComment({
+                        filePath,
+                        side: pending!.side,
+                        lineNumber: pending!.lineNumber,
+                        endLine: pending!.endLine,
+                        lineContent: getLineContent(pending!.side, pending!.lineNumber),
+                        body,
+                      })
                       setPending(null)
                     }}
                     onCancel={() => setPending(null)}
@@ -257,10 +261,12 @@ export const FileDiffCard = memo(function FileDiffCard({
             renderGutterUtility={(getHoveredLine) => (
               <button
                 className="gutter-add-btn"
-                onClick={() => {
+                aria-label="Add a comment"
+                title="Add a comment — hold shift to cover a range of lines"
+                onClick={(event) => {
                   const line = getHoveredLine()
                   if (line) {
-                    setPending({ side: line.side, lineNumber: line.lineNumber })
+                    setPending((open) => extendPending(open, line, event.shiftKey))
                   }
                 }}
               >

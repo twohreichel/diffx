@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react'
-import type { FileDiffMetadata, DiffLineAnnotation, AnnotationSide } from '@pierre/diffs'
-import type { ReviewComment } from '../../types'
+import type { FileDiffMetadata, DiffLineAnnotation } from '@pierre/diffs'
+import type { NewComment, ReviewComment } from '../../types'
 import type { BinaryFileInfo } from '../hooks/useDiff'
 import type { LineDiffMode } from '../../lineDiff'
 import type { BlinkState, ViewMode } from '../../blink'
@@ -28,7 +28,7 @@ interface DiffViewerProps {
   binaryFiles: Map<string, BinaryFileInfo>
   onViewedChange: (filePath: string, viewed: boolean) => void
   fileAnnotationsMap: Map<string, DiffLineAnnotation<ReviewComment>[]>
-  onAddComment: (filePath: string, side: AnnotationSide, lineNumber: number, lineContent: string, body: string) => void
+  onAddComment: (comment: NewComment) => void
   onDeleteComment: (id: string) => void
   onEditComment: (id: string, body: string) => void
   onCommentStatusChange: (id: string, status: ReviewComment['status']) => void

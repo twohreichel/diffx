@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 
 interface CommentFormProps {
+  lineNumber: number
+  endLine: number
   onSubmit: (body: string) => void
   onCancel: () => void
 }
 
-export function CommentForm({ onSubmit, onCancel }: CommentFormProps) {
+export function CommentForm({ lineNumber, endLine, onSubmit, onCancel }: CommentFormProps) {
   const [body, setBody] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -32,6 +34,11 @@ export function CommentForm({ onSubmit, onCancel }: CommentFormProps) {
 
   return (
     <div className="comment-form">
+      {endLine > lineNumber ? (
+        <span className="comment-form-range">{`Lines ${lineNumber}–${endLine}`}</span>
+      ) : (
+        <span className="comment-form-range">{`Line ${lineNumber} — shift-click the gutter to cover more lines`}</span>
+      )}
       <textarea
         ref={textareaRef}
         value={body}

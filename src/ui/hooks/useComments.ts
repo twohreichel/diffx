@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { DiffLineAnnotation } from '@pierre/diffs'
-import type { ReviewComment } from '../../types'
+import type { NewComment, ReviewComment } from '../../types'
 import { formatComments } from '../formatComments'
 
 const COMMENTS_KEY = ['comments']
@@ -16,7 +16,7 @@ export function useComments() {
   const { data: comments = [] } = useQuery({ queryKey: COMMENTS_KEY, queryFn: fetchComments, refetchInterval: 3000 })
 
   const addMutation = useMutation({
-    mutationFn: async (params: { filePath: string; side: 'deletions' | 'additions'; lineNumber: number; lineContent: string; body: string }) => {
+    mutationFn: async (params: NewComment) => {
       const res = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,8 +56,8 @@ export function useComments() {
   })
 
   const addComment = useCallback(
-    (filePath: string, side: 'deletions' | 'additions', lineNumber: number, lineContent: string, body: string) => {
-      addMutation.mutate({ filePath, side, lineNumber, lineContent, body })
+    (comment: NewComment) => {
+      addMutation.mutate(comment)
     },
     [addMutation],
   )

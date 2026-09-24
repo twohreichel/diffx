@@ -704,6 +704,13 @@ body {
     color: var(--text);
 }
 
+.comment-form-range {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
 .comment-bubble-range {
     font-size: 11px;
     color: var(--text-secondary);
