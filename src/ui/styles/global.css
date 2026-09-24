@@ -484,6 +484,10 @@ body {
        container, so the diff's sticky header can stick to `.main-scroll`. */
     overflow: clip;
     scroll-margin-top: 16px;
+    /* A card the reader has scrolled past keeps its size but skips layout and
+       paint, which is what a diff of many files costs most of its scrolling to. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
 }
 
 .file-diff-viewed {

@@ -5,16 +5,19 @@ import { useOnScreen } from './useOnScreen'
 
 type Callback = (entries: { isIntersecting: boolean }[]) => void
 
-function stubObserver(): { enter: () => void; leave: () => void; disconnected: () => boolean } {
+function stubObserver(): { enter: () => void; leave: () => void; disconnected: () => boolean; observed: () => number } {
   let callback: Callback = () => {}
   let disconnected = false
+  let observed = 0
   vi.stubGlobal(
     'IntersectionObserver',
     class {
       constructor(received: Callback) {
         callback = received
       }
-      observe() {}
+      observe() {
+        observed += 1
+      }
       disconnect() {
         disconnected = true
       }
@@ -24,6 +27,7 @@ function stubObserver(): { enter: () => void; leave: () => void; disconnected: (
     enter: () => act(() => callback([{ isIntersecting: true }])),
     leave: () => act(() => callback([{ isIntersecting: false }])),
     disconnected: () => disconnected,
+    observed: () => observed,
   }
 }
 
@@ -56,6 +60,13 @@ describe('useOnScreen', () => {
     const { unmount } = renderHook(() => useOnScreen(refTo(document.createElement('div'))))
     unmount()
     expect(observer.disconnected()).toBe(true)
+  })
+
+  it('watches nothing while the caller has no use for the answer', () => {
+    const observer = stubObserver()
+    const { result } = renderHook(() => useOnScreen(refTo(document.createElement('div')), false))
+    expect(result.current).toBe(false)
+    expect(observer.observed()).toBe(0)
   })
 
   it('treats everything as visible where the browser cannot tell', () => {

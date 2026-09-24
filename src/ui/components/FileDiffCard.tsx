@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, memo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { FileDiff } from '@pierre/diffs/react'
 import type { DiffLineAnnotation, FileDiffMetadata, AnnotationSide } from '@pierre/diffs'
 import type { NewComment, ReviewComment } from '../../types'
@@ -28,7 +28,7 @@ interface MoveMarker {
   role: 'from' | 'to'
 }
 
-type CardAnnotation = ReviewComment | { _pending: true } | MoveMarker
+type CardAnnotation = ReviewComment | { _pending: PendingComment } | MoveMarker
 
 /** A badge on each end of a pair that has an end in this file. */
 function moveAnnotations(moves: MovePair[], filePath: string): DiffLineAnnotation<MoveMarker>[] {
@@ -91,9 +91,16 @@ export const FileDiffCard = memo(function FileDiffCard({
 }: FileDiffCardProps) {
   const [pending, setPending] = useState<PendingComment | null>(null)
   const card = useRef<HTMLDivElement>(null)
-  const onScreen = useOnScreen(card)
+  // Only a structural comparison waits for the file to come into view, and an
+  // observer per card costs a render each while the reader scrolls past.
+  const onScreen = useOnScreen(card, diffStyle === 'structural')
 
-  const hidden = hiddenAnnotations(fileDiff, annotations)
+  // The renderer redraws the whole file whenever one of its props changes
+  // identity, so the callbacks reach the current handlers through a ref.
+  const handlers = useRef({ onJumpToMove, onViewedChange, onToggleStructural, onAddComment, onDeleteComment, onEditComment, onCommentStatusChange })
+  handlers.current = { onJumpToMove, onViewedChange, onToggleStructural, onAddComment, onDeleteComment, onEditComment, onCommentStatusChange }
+
+  const hidden = useMemo(() => hiddenAnnotations(fileDiff, annotations), [fileDiff, annotations])
   const blink = diffStyle === 'blink'
 
   // FR-010: the comparison is asked for per file, and only once the file is in
@@ -113,7 +120,7 @@ export const FileDiffCard = memo(function FileDiffCard({
     if (structural.result) onStructuralResult(filePath, structural.result.unchanged)
   }, [filePath, structural.result, onStructuralResult])
 
-  const getLineContent = (side: AnnotationSide, lineNumber: number): string => {
+  const getLineContent = useCallback((side: AnnotationSide, lineNumber: number): string => {
     const lines = side === 'additions' ? fileDiff.additionLines : fileDiff.deletionLines
     // Full (non-partial) diffs carry the entire file, so any line — including
     // expanded context outside hunks — can be addressed directly.
@@ -132,21 +139,140 @@ export const FileDiffCard = memo(function FileDiffCard({
       }
     }
     return ''
-  }
+  }, [fileDiff])
 
-  const allAnnotations: DiffLineAnnotation<CardAnnotation>[] = [
-    ...annotations,
-    ...moveAnnotations(moves, filePath),
-    ...(pending
-      ? [
-          {
-            side: pending.side,
-            lineNumber: pending.lineNumber,
-            metadata: { _pending: true as const },
-          },
-        ]
-      : []),
-  ]
+  const markers = useMemo(() => moveAnnotations(moves, filePath), [moves, filePath])
+
+  const allAnnotations: DiffLineAnnotation<CardAnnotation>[] = useMemo(
+    () => [
+      ...annotations,
+      ...markers,
+      ...(pending ? [{ side: pending.side, lineNumber: pending.lineNumber, metadata: { _pending: pending } }] : []),
+    ],
+    [annotations, markers, pending],
+  )
+
+  const options = useMemo(
+    () => ({
+      diffStyle: fellBackToLines ? 'unified' : rendererDiffStyle(diffStyle),
+      stickyHeader: true,
+      expansionLineCount: 20,
+      enableGutterUtility: true,
+      theme: { dark: 'github-dark', light: 'github-light' },
+      themeType: 'system' as const,
+      // Wrapped split columns share one grid through `display: contents`,
+      // so hiding a column there would collapse the layout.
+      overflow: (softWrap && !blink ? 'wrap' : 'scroll') as 'wrap' | 'scroll',
+      lineDiffType: lineDiffType(lineDiff),
+      maxLineDiffLength: MAX_LINE_DIFF_LENGTH,
+      // The renderer marks intra-line segments by background alone. The
+      // underline adds the second, non-colour cue Constitution IX asks for.
+      unsafeCSS:
+        `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
+        (blink ? blinkCSS(blinkState) : '') +
+        movesCSS(moves, filePath) +
+        (marked ? structuralCSS(marked) : ''),
+    }),
+    [fellBackToLines, diffStyle, softWrap, blink, lineDiff, tabSize, blinkState, moves, filePath, marked],
+  )
+
+  const renderHeaderMetadata = useCallback(
+    () => (
+      <>
+        {structuralAvailable && (
+          <button
+            className="btn btn-sm structural-toggle"
+            title={
+              diffStyle === 'structural'
+                ? 'Show the line-based rows for this file'
+                : 'Compare this file structurally, leaving the other files as they are'
+            }
+            onClick={(e) => {
+              e.stopPropagation()
+              handlers.current.onToggleStructural(filePath)
+            }}
+          >
+            {diffStyle === 'structural' ? 'Lines' : 'Structural'}
+          </button>
+        )}
+        {hidden.length > 0 && (
+          <span
+            className="hidden-comment-badge"
+            title={`${hidden.length} comment(s) on lines the current context width leaves out`}
+          >
+            {hidden.length} hidden
+          </span>
+        )}
+        <label className="viewed-label" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={viewed}
+            onChange={(e) => handlers.current.onViewedChange(filePath, e.target.checked)}
+          />
+          Viewed
+        </label>
+      </>
+    ),
+    [structuralAvailable, diffStyle, filePath, hidden, viewed],
+  )
+
+  const renderAnnotation = useCallback(
+    (annotation: DiffLineAnnotation<CardAnnotation>) => {
+      if ('_move' in annotation.metadata) {
+        const marker = annotation.metadata
+        return <MoveBadge pair={marker._move} role={marker.role} onJump={handlers.current.onJumpToMove} />
+      }
+      if ('_pending' in annotation.metadata) {
+        const open = annotation.metadata._pending
+        return (
+          <CommentForm
+            lineNumber={open.lineNumber}
+            endLine={open.endLine}
+            onSubmit={(body) => {
+              handlers.current.onAddComment({
+                filePath,
+                side: open.side,
+                lineNumber: open.lineNumber,
+                endLine: open.endLine,
+                lineContent: getLineContent(open.side, open.lineNumber),
+                body,
+              })
+              setPending(null)
+            }}
+            onCancel={() => setPending(null)}
+          />
+        )
+      }
+      return (
+        <CommentBubble
+          comment={annotation.metadata as ReviewComment}
+          onDelete={handlers.current.onDeleteComment}
+          onEdit={handlers.current.onEditComment}
+          onStatusChange={handlers.current.onCommentStatusChange}
+        />
+      )
+    },
+    [filePath, getLineContent],
+  )
+
+  const renderGutterUtility = useCallback(
+    (getHoveredLine: () => { side: AnnotationSide; lineNumber: number } | undefined) => (
+      <button
+        className="gutter-add-btn"
+        aria-label="Add a comment"
+        title="Add a comment — hold shift to cover a range of lines"
+        onClick={(event) => {
+          const line = getHoveredLine()
+          if (line) {
+            setPending((open) => extendPending(open, line, event.shiftKey))
+          }
+        }}
+      >
+        +
+      </button>
+    ),
+    [],
+  )
 
   return (
     <div className={`file-diff-card ${viewed ? 'file-diff-viewed' : ''}`} id={id} ref={card}>
@@ -167,112 +293,11 @@ export const FileDiffCard = memo(function FileDiffCard({
           {notice && <p className="structural-notice">{notice}</p>}
           <FileDiff<CardAnnotation>
             fileDiff={fileDiff}
-            options={{
-              diffStyle: fellBackToLines ? 'unified' : rendererDiffStyle(diffStyle),
-              stickyHeader: true,
-              expansionLineCount: 20,
-              enableGutterUtility: true,
-              theme: { dark: 'github-dark', light: 'github-light' },
-              themeType: 'system',
-              // Wrapped split columns share one grid through `display: contents`,
-              // so hiding a column there would collapse the layout.
-              overflow: softWrap && !blink ? 'wrap' : 'scroll',
-              lineDiffType: lineDiffType(lineDiff),
-              maxLineDiffLength: MAX_LINE_DIFF_LENGTH,
-              // The renderer marks intra-line segments by background alone. The
-              // underline adds the second, non-colour cue Constitution IX asks for.
-              unsafeCSS:
-                `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
-                (blink ? blinkCSS(blinkState) : '') +
-                movesCSS(moves, filePath) +
-                (marked ? structuralCSS(marked) : ''),
-            }}
+            options={options}
             lineAnnotations={allAnnotations}
-            renderHeaderMetadata={() => (
-              <>
-                {structuralAvailable && (
-                  <button
-                    className="btn btn-sm structural-toggle"
-                    title={
-                      diffStyle === 'structural'
-                        ? 'Show the line-based rows for this file'
-                        : 'Compare this file structurally, leaving the other files as they are'
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onToggleStructural(filePath)
-                    }}
-                  >
-                    {diffStyle === 'structural' ? 'Lines' : 'Structural'}
-                  </button>
-                )}
-                {hidden.length > 0 && (
-                  <span
-                    className="hidden-comment-badge"
-                    title={`${hidden.length} comment(s) on lines the current context width leaves out`}
-                  >
-                    {hidden.length} hidden
-                  </span>
-                )}
-                <label className="viewed-label" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={viewed}
-                    onChange={(e) => onViewedChange(filePath, e.target.checked)}
-                  />
-                  Viewed
-                </label>
-              </>
-            )}
-            renderAnnotation={(annotation) => {
-              if ('_move' in annotation.metadata) {
-                const marker = annotation.metadata
-                return <MoveBadge pair={marker._move} role={marker.role} onJump={onJumpToMove} />
-              }
-              if ('_pending' in annotation.metadata) {
-                return (
-                  <CommentForm
-                    lineNumber={pending!.lineNumber}
-                    endLine={pending!.endLine}
-                    onSubmit={(body) => {
-                      onAddComment({
-                        filePath,
-                        side: pending!.side,
-                        lineNumber: pending!.lineNumber,
-                        endLine: pending!.endLine,
-                        lineContent: getLineContent(pending!.side, pending!.lineNumber),
-                        body,
-                      })
-                      setPending(null)
-                    }}
-                    onCancel={() => setPending(null)}
-                  />
-                )
-              }
-              return (
-                <CommentBubble
-                  comment={annotation.metadata as ReviewComment}
-                  onDelete={onDeleteComment}
-                  onEdit={onEditComment}
-                  onStatusChange={onCommentStatusChange}
-                />
-              )
-            }}
-            renderGutterUtility={(getHoveredLine) => (
-              <button
-                className="gutter-add-btn"
-                aria-label="Add a comment"
-                title="Add a comment — hold shift to cover a range of lines"
-                onClick={(event) => {
-                  const line = getHoveredLine()
-                  if (line) {
-                    setPending((open) => extendPending(open, line, event.shiftKey))
-                  }
-                }}
-              >
-                +
-              </button>
-            )}
+            renderHeaderMetadata={renderHeaderMetadata}
+            renderAnnotation={renderAnnotation}
+            renderGutterUtility={renderGutterUtility}
           />
         </>
       )}
