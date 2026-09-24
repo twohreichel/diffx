@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Toolbar } from './Toolbar'
+import { APP_VERSION } from '../version'
 import type { ContextWidth } from '../../context'
 import type { LineDiffMode } from '../../lineDiff'
 import type { AutoBlink, ViewMode } from '../../blink'
@@ -247,5 +248,12 @@ describe('Toolbar change map control', () => {
   it('marks an open map for assistive technology, not by colour alone', () => {
     renderToolbar({ mapOpen: true })
     expect(screen.getByRole('button', { name: 'Change map' })).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+describe('Toolbar version', () => {
+  it('names the running version next to the repository', () => {
+    renderToolbar()
+    expect(screen.getByText(`v${APP_VERSION}`)).toBeInTheDocument()
   })
 })

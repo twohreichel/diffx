@@ -6,6 +6,7 @@ import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
 import { AUTO_BLINK_OPTIONS, parseAutoBlink, type AutoBlink, type BlinkState, type ViewMode } from '../../blink'
 import { MIN_LINES_OPTIONS, SIMILARITY_OPTIONS } from '../../moves'
 import type { DifftAvailability } from '../../structural'
+import { APP_VERSION } from '../version'
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   split: 'Split',
@@ -141,6 +142,7 @@ export function Toolbar({
     <div className="toolbar">
       <div className="toolbar-left">
         <h1 className="toolbar-title">{repoName}</h1>
+        <span className="toolbar-version" title="Running version">{`v${APP_VERSION}`}</span>
         {branch && (
           <span className="toolbar-branch">
             <GitBranch size={12} />
