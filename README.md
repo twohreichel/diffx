@@ -35,7 +35,7 @@ diffx --version
 ```
 
 The fork stays ahead of the published package, so the version tells the two
-apart: `0.18.0` is this fork, `0.16.x` the version from npm.
+apart: `0.19.0` is this fork, `0.16.x` the version from npm.
 
 A global install lands in the node environment that is active at that moment.
 Where an earlier diffx was installed under a different node version or through

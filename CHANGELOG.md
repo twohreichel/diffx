@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.19.0
+
+### Minor Changes
+
+- f333ea3: `--allow-from` lets named devices on the local network review, and every other client gets 403. `--host` refuses `0.0.0.0` and `::`.
+- 3a57c5e: On a screen narrower than 768 pixels the split view shows as one column with wrapped lines. The saved view and wrap settings stay unchanged.
+- d5370c6: On touch screens the toolbar offers a definition mode. While it is on, a tap on a name looks up where it is declared, as a cmd- or ctrl-click does with a keyboard. On a phone the switch sits in the menu.
+
+### Patch Changes
+
+- 925f221: "Copy comments" falls back to a selected text field and, where the browser blocks both ways, shows the text for manual copying.
+- 8983096: The image preview serves only files that the current diff contains.
+- ea5604f: The header names the running version next to the repository name.
+- 09f5a57: On touch screens blink mode shows buttons at the bottom for the previous change, swapping before and after, and the next change, so the view works without a keyboard.
+- cbf65a9: On touch screens a tap on "+" of another line extends the open comment to a range of lines, because a finger cannot hold shift. The comment form says so. Cancel the form to start a new single-line comment. The edit, resolve and delete buttons of a comment wrap onto a new row in a narrow column instead of running off the card.
+- 94024ce: On a screen narrower than 768 pixels the file tree opens from a toolbar button over the diff and closes when a file is picked. The saved desktop sidebar stays unchanged.
+- 0afbc4d: On touch screens every button, select, text field, checkbox and file tree row is at least 44 pixels in each direction, and the comment actions stay visible without hover.
+- 6c148af: On a screen narrower than 768 pixels the toolbar fits one row with the file tree, the copy button and a menu. The menu holds the view, context, change map and settings controls.
+- 0f032ff: On phones and tablets the review fills the visible screen without hiding behind the notch or the home bar, and focusing a text field no longer zooms the page.
+- 0c62ce4: On a phone the change map, the declarations popup, the settings menu and the manual copy field open as a sheet along the bottom edge across the full width.
+
 ## 0.18.0
 
 ### Minor Changes
