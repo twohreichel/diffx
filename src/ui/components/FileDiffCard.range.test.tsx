@@ -64,6 +64,7 @@ function renderCard(onAddComment = vi.fn()) {
 
 beforeEach(() => {
   hovered.line = null
+  vi.unstubAllGlobals()
 })
 
 describe('FileDiffCard comment range', () => {
@@ -84,15 +85,19 @@ describe('FileDiffCard comment range', () => {
     })
   })
 
-  it('covers the lines between two clicks when the second one holds shift', async () => {
+  it.each([
+    { input: 'the second click holds shift', touch: false, hint: 'Line 8 — shift-click the gutter to cover more lines' },
+    { input: 'a finger taps both lines', touch: true, hint: 'Line 8 — tap + on another line to cover more lines' },
+  ])('covers the lines between two clicks when $input', async ({ touch, hint }) => {
+    vi.stubGlobal('matchMedia', () => ({ matches: touch, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     const user = userEvent.setup()
     const onAddComment = renderCard()
     hovered.line = { side: 'additions', lineNumber: 8 }
     await user.click(screen.getByRole('button', { name: 'Add a comment' }))
+    expect(screen.getByText(hint)).toBeInTheDocument()
     hovered.line = { side: 'additions', lineNumber: 12 }
-    await user.keyboard('{Shift>}')
+    if (!touch) await user.keyboard('{Shift>}')
     await user.click(screen.getByRole('button', { name: 'Add a comment' }))
-    await user.keyboard('{/Shift}')
     expect(screen.getByText('Lines 8–12')).toBeInTheDocument()
     await user.type(screen.getByRole('textbox'), 'Extract these')
     await user.click(screen.getByRole('button', { name: 'Comment' }))

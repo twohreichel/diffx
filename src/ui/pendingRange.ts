@@ -15,8 +15,9 @@ interface ClickedLine {
 /**
  * Turns a gutter click into the range the comment form covers.
  *
- * A shift-click grows the open range towards the clicked line. Any other click starts
- * a fresh single-line comment, as does a shift-click on the opposite side of the diff.
+ * An extending click (a shift-click, or any tap on a touch screen) grows the open range
+ * towards the clicked line. Any other click starts a fresh single-line comment,
+ * as does an extending click on the opposite side of the diff.
  */
 export function extendPending(pending: PendingComment | null, line: ClickedLine, extend: boolean): PendingComment {
   if (!extend || !pending || pending.side !== line.side) {
