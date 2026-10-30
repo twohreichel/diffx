@@ -13,7 +13,19 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:3433',
+      // The server's guard accepts only its own host and origin.
+      '/api': {
+        target: 'http://localhost:3433',
+        changeOrigin: true,
+        configure: (proxy) => {
+          // Only the dev page's own origin is translated, so the guard still rejects other sites.
+          proxy.on('proxyReq', (proxyReq) => {
+            if (proxyReq.getHeader('origin') === 'http://localhost:5173') {
+              proxyReq.setHeader('origin', 'http://localhost:3433')
+            }
+          })
+        },
+      },
     },
   },
 })

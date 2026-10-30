@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Toolbar } from './Toolbar'
 import { APP_VERSION } from '../version'
@@ -48,7 +48,7 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       onDefaultTabSizeChange={vi.fn()}
       onSoftWrapChange={vi.fn()}
       onBrowserChange={vi.fn()}
-      onCopyComments={vi.fn()}
+      getCommentsText={() => ''}
       mapOpen={false}
       onToggleMap={vi.fn()}
       {...overrides}
@@ -255,5 +255,33 @@ describe('Toolbar version', () => {
   it('names the running version next to the repository', () => {
     renderToolbar()
     expect(screen.getByText(`v${APP_VERSION}`)).toBeInTheDocument()
+  })
+})
+
+describe('Toolbar copy comments', () => {
+  // fireEvent instead of userEvent, which replaces navigator.clipboard with its own stub
+  function stubBrowser(clipboard: { writeText: () => Promise<void> } | undefined, execCommand: boolean) {
+    Object.defineProperty(navigator, 'clipboard', { value: clipboard, configurable: true })
+    document.execCommand = vi.fn(() => execCommand)
+  }
+
+  it('confirms the copy once the browser took the text', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    stubBrowser({ writeText }, false)
+    renderToolbar({ commentCount: 1, getCommentsText: () => 'fix this' })
+    fireEvent.click(screen.getByRole('button', { name: 'Copy comments (1)' }))
+    expect(await screen.findByRole('button', { name: 'Copied!' })).toBeInTheDocument()
+    expect(writeText).toHaveBeenCalledWith('fix this')
+  })
+
+  it('shows the text for manual copying when the browser blocks both ways', async () => {
+    stubBrowser(undefined, false)
+    renderToolbar({ commentCount: 1, getCommentsText: () => 'fix this' })
+    fireEvent.click(screen.getByRole('button', { name: 'Copy comments (1)' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Copy comments manually' })
+    expect(dialog.querySelector('textarea')).toHaveValue('fix this')
+    expect(screen.queryByRole('button', { name: 'Copied!' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

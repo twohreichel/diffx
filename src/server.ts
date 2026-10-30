@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join, extname, resolve } from 'node:path'
 import { Hono } from 'hono'
+import type { MiddlewareHandler } from 'hono'
 import { serve } from '@hono/node-server'
 import { getGitDiff, getCustomGitDiff, getRepoName, getBranchName, getFileContent, getBlobContent, getWorktreeFileContent, isImageFile, getTabSizeForFiles, getUntrackedFilePaths } from './git.js'
 import { loadSettings, saveSettings } from './settings.js'
@@ -10,6 +11,7 @@ import type { CommentStore } from './comments.js'
 import { isSafePath } from './path.js'
 import { detectDifft, structuralDiff, type DifftAvailability } from './structural.js'
 import { findDefinitions } from './definitions.js'
+import { createGuard, isLoopback } from './guard.js'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -101,8 +103,9 @@ function difftAvailability(): DifftAvailability {
   return difft
 }
 
-export function createApp(clientDir: string, customDiffArgs?: string[], commentStore?: CommentStore) {
+export function createApp(clientDir: string, customDiffArgs?: string[], commentStore?: CommentStore, guard?: MiddlewareHandler) {
   const app = new Hono()
+  if (guard) app.use('*', guard)
   const isCustomMode = !!customDiffArgs
   const store = commentStore ?? new InMemoryCommentStore()
   const viewedFiles = new Map<string, string>()
@@ -132,6 +135,10 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
     const version = c.req.query('version') as 'old' | 'new'
     if (!path || !version) {
       return c.json({ error: 'Missing path or version' }, 400)
+    }
+    const patch = isCustomMode ? getCustomGitDiff(customDiffArgs) : getGitDiff({ staged: true, untracked: true })
+    if (!parseFilePaths(patch).includes(path)) {
+      return c.json({ error: 'File not in current diff' }, 404)
     }
     const content = getFileContent(path, version)
     if (!content) {
@@ -320,8 +327,13 @@ export function startServer(options: {
   host: string
   clientDir: string
   customDiffArgs?: string[]
+  allowFrom?: string[]
 }): Promise<{ port: number }> {
-  const app = createApp(options.clientDir, options.customDiffArgs)
+  const guard = createGuard({ host: options.host, port: options.port, allowFrom: options.allowFrom ?? [] })
+  const app = createApp(options.clientDir, options.customDiffArgs, undefined, guard)
+  // A LAN-bound server also listens on loopback. The CLI opens the local browser there,
+  // because the guard allows saving settings only from loopback.
+  const needsLoopback = !isLoopback(options.host)
 
   return new Promise((resolve) => {
     const server = serve({
@@ -329,6 +341,7 @@ export function startServer(options: {
       port: options.port,
       hostname: options.host,
     }, (info) => {
+      if (needsLoopback) serve({ fetch: app.fetch, port: info.port, hostname: '127.0.0.1' })
       resolve({ port: info.port })
     })
   })

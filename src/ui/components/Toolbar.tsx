@@ -7,6 +7,7 @@ import { AUTO_BLINK_OPTIONS, parseAutoBlink, type AutoBlink, type BlinkState, ty
 import { MIN_LINES_OPTIONS, SIMILARITY_OPTIONS } from '../../moves'
 import type { DifftAvailability } from '../../structural'
 import { APP_VERSION } from '../version'
+import { copyText } from '../clipboard'
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   split: 'Split',
@@ -74,7 +75,7 @@ interface ToolbarProps {
   onDefaultTabSizeChange: (size: number) => void
   onSoftWrapChange: (softWrap: boolean) => void
   onBrowserChange: (browser: string) => void
-  onCopyComments: () => Promise<void>
+  getCommentsText: () => string
   mapOpen: boolean
   onToggleMap: () => void
 }
@@ -112,16 +113,21 @@ export function Toolbar({
   onDefaultTabSizeChange,
   onSoftWrapChange,
   onBrowserChange,
-  onCopyComments,
+  getCommentsText,
   mapOpen,
   onToggleMap,
 }: ToolbarProps) {
   const [copied, setCopied] = useState(false)
+  const [manualCopyText, setManualCopyText] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
 
   const handleCopy = async () => {
-    await onCopyComments()
+    const text = getCommentsText()
+    if (!(await copyText(text))) {
+      setManualCopyText(text)
+      return
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -368,6 +374,15 @@ export function Toolbar({
         >
           {copied ? 'Copied!' : `Copy comments (${commentCount})`}
         </button>
+        {manualCopyText !== null && (
+          <div className="copy-fallback" role="dialog" aria-label="Copy comments manually">
+            <p>The browser blocked copying. Select the text and copy it.</p>
+            <textarea readOnly autoFocus value={manualCopyText} onFocus={(e) => e.currentTarget.select()} />
+            <button className="btn btn-sm" onClick={() => setManualCopyText(null)}>
+              Close
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
