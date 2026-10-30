@@ -65,6 +65,8 @@ body {
     flex-shrink: 0;
     z-index: 100;
     display: flex;
+    flex-wrap: wrap;
+    row-gap: 8px;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
@@ -169,8 +171,69 @@ body {
 
 .toolbar-right {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
+}
+
+.toolbar-controls {
+    display: contents;
+}
+
+.toolbar .toolbar-more {
+    display: none;
+}
+
+/* A phone has room for one row, so everything but the files, the copy button and the menu moves into the menu. */
+@media (max-width: 767px) {
+    .toolbar {
+        position: relative;
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding: 6px 8px;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .toolbar-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .toolbar-version,
+    .toolbar-branch,
+    .toolbar-stat {
+        display: none;
+    }
+
+    .toolbar .toolbar-more {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .toolbar-controls {
+        display: none;
+    }
+
+    .toolbar-controls.toolbar-controls-open {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+    }
 }
 
 /* Settings dropdown */

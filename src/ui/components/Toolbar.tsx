@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { GitBranch, Map as MapIcon, PanelLeftOpen, Settings } from 'lucide-react'
+import { Ellipsis, GitBranch, Map as MapIcon, PanelLeftOpen, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
@@ -122,6 +122,7 @@ export function Toolbar({
   const [copied, setCopied] = useState(false)
   const [manualCopyText, setManualCopyText] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
 
   const handleCopy = async () => {
@@ -169,210 +170,212 @@ export function Toolbar({
         </span>
       </div>
       <div className="toolbar-right">
-        <div className="toolbar-toggle">
-          {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              className={`btn btn-sm ${diffStyle === mode ? 'btn-active' : ''}`}
-              title={modeTitle(mode, structural)}
-              disabled={mode === 'structural' && !structural.available}
-              onClick={() => onDiffStyleChange(mode)}
-            >
-              {VIEW_MODE_LABELS[mode]}
-            </button>
-          ))}
-        </div>
-        {diffStyle === 'blink' && (
-          <span
-            className={`blink-state blink-state-${blinkState}`}
-            role="status"
-            aria-label="Blink state"
-            title={BLINK_HINT}
-          >
-            {blinkState === 'before' ? 'BEFORE' : 'AFTER'}
-          </span>
-        )}
-        <div
-          className="toolbar-context"
-          role="group"
-          aria-label="Context"
-          title={
-            diffStyle === 'blink'
-              ? 'Blink renders the whole file, so context does not apply'
-              : contextDisabled
-                ? 'Context does not apply: this diff contains only binary files'
-                : 'Lines of unchanged context around each change'
-          }
-        >
-          <span className="toolbar-context-label">Context</span>
+        <div className={`toolbar-controls ${menuOpen ? 'toolbar-controls-open' : ''}`}>
           <div className="toolbar-toggle">
-            {CONTEXT_STEPS.map((step) => (
+            {(Object.keys(VIEW_MODE_LABELS) as ViewMode[]).map((mode) => (
               <button
-                key={String(step)}
-                data-context={step}
-                className={`btn btn-sm ${context === step ? 'btn-active' : ''}`}
-                aria-pressed={context === step}
-                disabled={contextDisabled || diffStyle === 'blink'}
-                onClick={() => onContextChange(step)}
+                key={mode}
+                className={`btn btn-sm ${diffStyle === mode ? 'btn-active' : ''}`}
+                title={modeTitle(mode, structural)}
+                disabled={mode === 'structural' && !structural.available}
+                onClick={() => onDiffStyleChange(mode)}
               >
-                {step === 'full' ? 'Full' : step}
+                {VIEW_MODE_LABELS[mode]}
               </button>
             ))}
           </div>
-        </div>
-        <button
-          className={`btn btn-sm ${mapOpen ? 'btn-active' : ''}`}
-          title="Change map"
-          aria-pressed={mapOpen}
-          onClick={onToggleMap}
-        >
-          <MapIcon size={14} />
-        </button>
-        <div className="settings-wrapper" ref={settingsRef}>
-          <button
-            className={`btn btn-sm settings-btn ${settingsOpen ? 'btn-active' : ''}`}
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            title="Settings"
+          {diffStyle === 'blink' && (
+            <span
+              className={`blink-state blink-state-${blinkState}`}
+              role="status"
+              aria-label="Blink state"
+              title={BLINK_HINT}
+            >
+              {blinkState === 'before' ? 'BEFORE' : 'AFTER'}
+            </span>
+          )}
+          <div
+            className="toolbar-context"
+            role="group"
+            aria-label="Context"
+            title={
+              diffStyle === 'blink'
+                ? 'Blink renders the whole file, so context does not apply'
+                : contextDisabled
+                  ? 'Context does not apply: this diff contains only binary files'
+                  : 'Lines of unchanged context around each change'
+            }
           >
-            <Settings size={14} />
-          </button>
-          {settingsOpen && (
-            <div className="settings-menu">
-              {!customMode && (
-                <>
-                  <label className="settings-item">
-                    <input
-                      type="checkbox"
-                      checked={diffOptions.staged}
-                      onChange={(e) =>
-                        onDiffOptionsChange({ ...diffOptions, staged: e.target.checked })
-                      }
-                    />
-                    Show staged
-                  </label>
-                  <label className="settings-item">
-                    <input
-                      type="checkbox"
-                      checked={diffOptions.untracked}
-                      onChange={(e) =>
-                        onDiffOptionsChange({ ...diffOptions, untracked: e.target.checked })
-                      }
-                    />
-                    Show untracked
-                  </label>
-                </>
-              )}
-              <label className="settings-item">
-                <input
-                  type="checkbox"
-                  checked={softWrap}
-                  onChange={(e) => onSoftWrapChange(e.target.checked)}
-                />
-                Soft wrap
-              </label>
-              <div className="settings-item settings-item-spaced">
-                <label htmlFor="line-diff-select">Intra-line diff</label>
-                <select
-                  id="line-diff-select"
-                  className="settings-select"
-                  value={lineDiff}
-                  onChange={(e) => onLineDiffChange(e.target.value as LineDiffMode)}
+            <span className="toolbar-context-label">Context</span>
+            <div className="toolbar-toggle">
+              {CONTEXT_STEPS.map((step) => (
+                <button
+                  key={String(step)}
+                  data-context={step}
+                  className={`btn btn-sm ${context === step ? 'btn-active' : ''}`}
+                  aria-pressed={context === step}
+                  disabled={contextDisabled || diffStyle === 'blink'}
+                  onClick={() => onContextChange(step)}
                 >
-                  {LINE_DIFF_MODES.map((mode) => (
-                    <option key={mode} value={mode}>
-                      {LINE_DIFF_LABELS[mode]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {diffStyle === 'blink' && !reducedMotion && (
+                  {step === 'full' ? 'Full' : step}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            className={`btn btn-sm ${mapOpen ? 'btn-active' : ''}`}
+            title="Change map"
+            aria-pressed={mapOpen}
+            onClick={onToggleMap}
+          >
+            <MapIcon size={14} />
+          </button>
+          <div className="settings-wrapper" ref={settingsRef}>
+            <button
+              className={`btn btn-sm settings-btn ${settingsOpen ? 'btn-active' : ''}`}
+              onClick={() => setSettingsOpen(!settingsOpen)}
+              title="Settings"
+            >
+              <Settings size={14} />
+            </button>
+            {settingsOpen && (
+              <div className="settings-menu">
+                {!customMode && (
+                  <>
+                    <label className="settings-item">
+                      <input
+                        type="checkbox"
+                        checked={diffOptions.staged}
+                        onChange={(e) =>
+                          onDiffOptionsChange({ ...diffOptions, staged: e.target.checked })
+                        }
+                      />
+                      Show staged
+                    </label>
+                    <label className="settings-item">
+                      <input
+                        type="checkbox"
+                        checked={diffOptions.untracked}
+                        onChange={(e) =>
+                          onDiffOptionsChange({ ...diffOptions, untracked: e.target.checked })
+                        }
+                      />
+                      Show untracked
+                    </label>
+                  </>
+                )}
+                <label className="settings-item">
+                  <input
+                    type="checkbox"
+                    checked={softWrap}
+                    onChange={(e) => onSoftWrapChange(e.target.checked)}
+                  />
+                  Soft wrap
+                </label>
                 <div className="settings-item settings-item-spaced">
-                  <label htmlFor="auto-blink-select">Auto blink</label>
+                  <label htmlFor="line-diff-select">Intra-line diff</label>
                   <select
-                    id="auto-blink-select"
+                    id="line-diff-select"
                     className="settings-select"
-                    value={String(autoBlink)}
-                    onChange={(e) => onAutoBlinkChange(parseAutoBlink(Number(e.target.value) || 'off'))}
+                    value={lineDiff}
+                    onChange={(e) => onLineDiffChange(e.target.value as LineDiffMode)}
                   >
-                    {AUTO_BLINK_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option === 'off' ? 'Off' : `${option} ms`}
+                    {LINE_DIFF_MODES.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {LINE_DIFF_LABELS[mode]}
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
-              {diffStyle === 'structural' && (
-                <label className="settings-item">
-                  <input
-                    type="checkbox"
-                    checked={ignoreComments}
-                    onChange={(e) => onIgnoreCommentsChange(e.target.checked)}
-                  />
-                  Ignore comments
-                </label>
-              )}
-              <div className="settings-item settings-item-spaced">
-                <label htmlFor="move-min-lines-select">Moved block size</label>
-                <select
-                  id="move-min-lines-select"
-                  className="settings-select"
-                  value={moveMinLines}
-                  onChange={(e) => onMoveSettingsChange({ moveMinLines: Number(e.target.value) })}
-                >
-                  {MIN_LINES_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option} lines
-                    </option>
-                  ))}
-                </select>
+                {diffStyle === 'blink' && !reducedMotion && (
+                  <div className="settings-item settings-item-spaced">
+                    <label htmlFor="auto-blink-select">Auto blink</label>
+                    <select
+                      id="auto-blink-select"
+                      className="settings-select"
+                      value={String(autoBlink)}
+                      onChange={(e) => onAutoBlinkChange(parseAutoBlink(Number(e.target.value) || 'off'))}
+                    >
+                      {AUTO_BLINK_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option === 'off' ? 'Off' : `${option} ms`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {diffStyle === 'structural' && (
+                  <label className="settings-item">
+                    <input
+                      type="checkbox"
+                      checked={ignoreComments}
+                      onChange={(e) => onIgnoreCommentsChange(e.target.checked)}
+                    />
+                    Ignore comments
+                  </label>
+                )}
+                <div className="settings-item settings-item-spaced">
+                  <label htmlFor="move-min-lines-select">Moved block size</label>
+                  <select
+                    id="move-min-lines-select"
+                    className="settings-select"
+                    value={moveMinLines}
+                    onChange={(e) => onMoveSettingsChange({ moveMinLines: Number(e.target.value) })}
+                  >
+                    {MIN_LINES_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option} lines
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="settings-item settings-item-spaced">
+                  <label htmlFor="move-similarity-select">Moved block similarity</label>
+                  <select
+                    id="move-similarity-select"
+                    className="settings-select"
+                    value={moveSimilarity}
+                    onChange={(e) => onMoveSettingsChange({ moveSimilarity: Number(e.target.value) })}
+                  >
+                    {SIMILARITY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {SIMILARITY_LABELS[String(option)]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="settings-item settings-item-spaced">
+                  <span>Default tab size</span>
+                  <select
+                    className="settings-select"
+                    value={defaultTabSize}
+                    onChange={(e) => onDefaultTabSizeChange(Number(e.target.value))}
+                  >
+                    <option value={2}>2</option>
+                    <option value={4}>4</option>
+                    <option value={8}>8</option>
+                  </select>
+                </div>
+                <div className="settings-item settings-item-spaced">
+                  <span>Browser</span>
+                  <select
+                    className="settings-select"
+                    value={browser || ''}
+                    onChange={(e) => {
+                      onBrowserChange(e.target.value)
+                      setSettingsOpen(false)
+                    }}
+                  >
+                    <option value="">Default</option>
+                    <option value="chrome">Chrome</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="edge">Edge</option>
+                    <option value="brave">Brave</option>
+                  </select>
+                </div>
               </div>
-              <div className="settings-item settings-item-spaced">
-                <label htmlFor="move-similarity-select">Moved block similarity</label>
-                <select
-                  id="move-similarity-select"
-                  className="settings-select"
-                  value={moveSimilarity}
-                  onChange={(e) => onMoveSettingsChange({ moveSimilarity: Number(e.target.value) })}
-                >
-                  {SIMILARITY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {SIMILARITY_LABELS[String(option)]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="settings-item settings-item-spaced">
-                <span>Default tab size</span>
-                <select
-                  className="settings-select"
-                  value={defaultTabSize}
-                  onChange={(e) => onDefaultTabSizeChange(Number(e.target.value))}
-                >
-                  <option value={2}>2</option>
-                  <option value={4}>4</option>
-                  <option value={8}>8</option>
-                </select>
-              </div>
-              <div className="settings-item settings-item-spaced">
-                <span>Browser</span>
-                <select
-                  className="settings-select"
-                  value={browser || ''}
-                  onChange={(e) => {
-                    onBrowserChange(e.target.value)
-                    setSettingsOpen(false)
-                  }}
-                >
-                  <option value="">Default</option>
-                  <option value="chrome">Chrome</option>
-                  <option value="firefox">Firefox</option>
-                  <option value="edge">Edge</option>
-                  <option value="brave">Brave</option>
-                </select>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <button
           className="btn btn-primary btn-sm"
@@ -380,6 +383,14 @@ export function Toolbar({
           disabled={commentCount === 0}
         >
           {copied ? 'Copied!' : `Copy comments (${commentCount})`}
+        </button>
+        <button
+          className={`btn btn-sm toolbar-more ${menuOpen ? 'btn-active' : ''}`}
+          title="More"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          <Ellipsis size={14} />
         </button>
         {manualCopyText !== null && (
           <div className="copy-fallback" role="dialog" aria-label="Copy comments manually">

@@ -1,4 +1,10 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+async function openSettings(page: Page) {
+  const more = page.getByTitle('More', { exact: true })
+  if (await more.isVisible()) await more.tap()
+  await page.getByTitle('Settings').tap()
+}
 
 test.describe('mobile view', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,6 +16,25 @@ test.describe('mobile view', () => {
     test.skip(page.viewportSize()!.width >= 768, 'only a phone is too narrow for two columns')
     await expect(page.locator('[data-unified]').first()).toBeAttached()
     await expect(page.locator('pre[data-overflow="wrap"]').first()).toBeAttached()
+  })
+
+  test('AC-M1: the toolbar fits the screen without scrolling sideways', async ({ page }) => {
+    const overflow = await page.evaluate(() => {
+      const toolbar = document.querySelector('.toolbar')!
+      return [toolbar.scrollWidth - toolbar.clientWidth, document.documentElement.scrollWidth - window.innerWidth]
+    })
+    expect(overflow).toEqual([0, 0])
+  })
+
+  test('AC-M6: the menu on a phone holds every toolbar function', async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 768, 'only a phone moves the toolbar into a menu')
+    await expect(page.getByTitle('Change map', { exact: true })).toBeHidden()
+    await page.getByTitle('More', { exact: true }).tap()
+    for (const name of ['Split', 'Unified', 'Blink', 'Structural', 'Change map']) {
+      await expect(page.locator('.toolbar').getByRole('button', { name, exact: true })).toBeVisible()
+    }
+    await expect(page.getByRole('group', { name: 'Context' })).toBeVisible()
+    await expect(page.getByTitle('Settings')).toBeVisible()
   })
 
   test('AC-M4: a phone opens the file tree over the diff and closes it on a file tap', async ({ page }) => {
@@ -29,7 +54,7 @@ test.describe('mobile view', () => {
   })
 
   test('AC-M9: text fields are large enough that focusing them does not zoom', async ({ page }) => {
-    await page.getByTitle('Settings').tap()
+    await openSettings(page)
     const sizes = await page
       .locator('input:not([type="checkbox"]), textarea, select')
       .evaluateAll((fields) => fields.map((field) => parseFloat(getComputedStyle(field).fontSize)))
@@ -38,7 +63,7 @@ test.describe('mobile view', () => {
   })
 
   test('AC-M2: every control is large enough to hit with a finger', async ({ page }) => {
-    await page.getByTitle('Settings').tap()
+    await openSettings(page)
     const tooSmall = await page
       .locator('button, select, input:not([type="checkbox"]), label:has(> input[type="checkbox"]), [role=button], .ft-row')
       .evaluateAll((controls) =>
