@@ -10,11 +10,15 @@ import { MAX_LINE_DIFF_LENGTH, lineDiffType, type LineDiffMode } from '../../lin
 import { blinkCSS, rendererDiffStyle, type BlinkState, type ViewMode } from '../../blink'
 import { movesCSS, type MovePair, type MoveRun } from '../../moves'
 import { structuralCSS, structuralNotice } from '../../structuralView'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useOnScreen } from '../hooks/useOnScreen'
 import { useStructural, type StructuralQuery, type StructuralState } from '../hooks/useStructural'
 import { MoveBadge } from './MoveBadge'
 
 const STRUCTURAL_LOADING = 'Comparing syntax trees…'
+
+/** A finger cannot hold shift, so on a touch screen every tap on "+" extends the open comment. */
+const TOUCH = '(pointer: coarse)'
 
 /** The one line a structural result gets, empty when it has nothing to add. */
 function structuralLine(structural: StructuralState): string {
@@ -90,6 +94,7 @@ export const FileDiffCard = memo(function FileDiffCard({
   onCommentStatusChange,
 }: FileDiffCardProps) {
   const [pending, setPending] = useState<PendingComment | null>(null)
+  const touch = useMediaQuery(TOUCH)
   const card = useRef<HTMLDivElement>(null)
   // Only a structural comparison waits for the file to come into view, and an
   // observer per card costs a render each while the reader scrolls past.
@@ -169,6 +174,8 @@ export const FileDiffCard = memo(function FileDiffCard({
       // underline adds the second, non-colour cue Constitution IX asks for.
       unsafeCSS:
         `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
+        // The expand button fills its separator row, so the rows of both columns grow together to a finger's size.
+        '@media (pointer: coarse) { [data-separator=line-info], [data-separator=line-info-basic], [data-separator=metadata] { height: 44px; } [data-expand-button] { min-width: 44px; } }' +
         (blink ? blinkCSS(blinkState) : '') +
         movesCSS(moves, filePath) +
         (marked ? structuralCSS(marked) : ''),
@@ -228,6 +235,7 @@ export const FileDiffCard = memo(function FileDiffCard({
           <CommentForm
             lineNumber={open.lineNumber}
             endLine={open.endLine}
+            touch={touch}
             onSubmit={(body) => {
               handlers.current.onAddComment({
                 filePath,
@@ -252,7 +260,7 @@ export const FileDiffCard = memo(function FileDiffCard({
         />
       )
     },
-    [filePath, getLineContent],
+    [filePath, getLineContent, touch],
   )
 
   const renderGutterUtility = useCallback(
@@ -264,14 +272,14 @@ export const FileDiffCard = memo(function FileDiffCard({
         onClick={(event) => {
           const line = getHoveredLine()
           if (line) {
-            setPending((open) => extendPending(open, line, event.shiftKey))
+            setPending((open) => extendPending(open, line, event.shiftKey || touch))
           }
         }}
       >
         +
       </button>
     ),
-    [],
+    [touch],
   )
 
   return (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { regionLine, stepRegion, toggleBlink, type AutoBlink, type BlinkState, type ChangeRegion } from '../../blink'
+import { useMediaQuery } from './useMediaQuery'
 import { useShortcuts } from './useShortcuts'
 
 /** The renderer owns the scroll container and takes only a class name. */
@@ -42,18 +43,7 @@ function scrollToRegion(region: ChangeRegion, state: BlinkState): void {
 
 /** True while the reader has asked the system for as little motion as possible. */
 export function usePrefersReducedMotion(): boolean {
-  const query = typeof window === 'undefined' ? null : window.matchMedia?.(REDUCED_MOTION)
-  const [reduced, setReduced] = useState(() => query?.matches ?? false)
-
-  useEffect(() => {
-    if (!query) return
-    const update = () => setReduced(query.matches)
-    update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [query])
-
-  return reduced
+  return useMediaQuery(REDUCED_MOTION)
 }
 
 interface BlinkOptions {
@@ -69,12 +59,18 @@ interface BlinkOptions {
  * Neither state is re-rendered on a toggle. Both columns stay in the DOM and only
  * the visible one changes, which is what keeps every shared line in place.
  */
-export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOptions): { blinkState: BlinkState } {
+export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOptions): {
+  blinkState: BlinkState
+  toggle: () => void
+  navigate: (direction: -1 | 1) => void
+} {
   const [blinkState, setBlinkState] = useState<BlinkState>('after')
   const [autoStopped, setAutoStopped] = useState(false)
   const current = useRef<BlinkState>(blinkState)
   const region = useRef(-1)
   current.current = blinkState
+
+  const toggle = useCallback(() => setBlinkState(toggleBlink), [])
 
   const navigate = useCallback(
     (direction: -1 | 1) => {
@@ -88,7 +84,7 @@ export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOp
   useShortcuts(
     enabled
       ? {
-          ' ': () => setBlinkState(toggleBlink),
+          ' ': toggle,
           n: () => navigate(1),
           p: () => navigate(-1),
         }
@@ -110,5 +106,5 @@ export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOp
     }
   }, [interval])
 
-  return { blinkState }
+  return { blinkState, toggle, navigate }
 }

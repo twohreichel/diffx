@@ -51,6 +51,10 @@ body {
 
 .app {
     height: 100vh;
+    /* Mobile Safari counts its own toolbar into 100vh. */
+    height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+        env(safe-area-inset-bottom) env(safe-area-inset-left);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -61,6 +65,8 @@ body {
     flex-shrink: 0;
     z-index: 100;
     display: flex;
+    flex-wrap: wrap;
+    row-gap: 8px;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
@@ -165,8 +171,69 @@ body {
 
 .toolbar-right {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
+}
+
+.toolbar-controls {
+    display: contents;
+}
+
+.toolbar .toolbar-more {
+    display: none;
+}
+
+/* A phone has room for one row, so everything but the files, the copy button and the menu moves into the menu. */
+@media (max-width: 767px) {
+    .toolbar {
+        position: relative;
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding: 6px 8px;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .toolbar-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .toolbar-version,
+    .toolbar-branch,
+    .toolbar-stat {
+        display: none;
+    }
+
+    .toolbar .toolbar-more {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .toolbar-controls {
+        display: none;
+    }
+
+    .toolbar-controls.toolbar-controls-open {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+    }
 }
 
 /* Settings dropdown */
@@ -391,6 +458,17 @@ body {
 .sidebar-collapsed {
     width: 40px;
     min-width: 40px;
+}
+
+/* On a phone the file tree lies over the diff and leaves the diff its full width. */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 150;
+    width: min(320px, 85vw);
+    height: auto;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar-resize-handle {
@@ -675,6 +753,7 @@ body {
 
 .comment-bubble-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     margin-bottom: 6px;
@@ -1594,4 +1673,97 @@ body {
     font-size: 11px;
     line-height: 1.5;
     color: var(--text-secondary);
+}
+
+/* iOS zooms into any text field below 16px on focus. The rule has to beat every component's own size. */
+@media (pointer: coarse) {
+    input:not([type="checkbox"]),
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+
+    /* 44px is the smallest target a finger hits reliably. A checkbox is tapped through its label. */
+    button,
+    select,
+    input:not([type="checkbox"]),
+    label:has(> input[type="checkbox"]),
+    .ft-row {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+
+    /* WebKit ignores the height of a natively drawn select, so the select draws its own arrow. */
+    select {
+        appearance: none;
+        padding-right: 24px !important;
+        background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b949e'/%3E%3C/svg%3E") no-repeat right 8px center !important;
+    }
+
+    /* The padding takes the tap, the dot keeps its size and does not cover the neighbouring lines. */
+    .gutter-add-btn {
+        padding: 14px;
+        background-clip: content-box;
+    }
+}
+
+/* Without a keyboard, Space, n and p need buttons. They sit at the bottom where a thumb reaches them. */
+.blink-touch-bar {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    .blink-touch-bar {
+        position: fixed;
+        left: 50%;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 120;
+        display: flex;
+        gap: 8px;
+        padding: 6px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Without hover these actions would never appear. */
+@media (hover: none) {
+    .comment-bubble-action,
+    .comment-bubble-delete,
+    .ct-item-actions {
+        opacity: 1;
+    }
+}
+
+/* On a phone every panel opens as a sheet along the bottom edge, where a thumb reaches it and no part sits off-screen. */
+@media (max-width: 767px) {
+    .cm,
+    .dp,
+    .settings-menu,
+    .copy-fallback {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 200;
+        width: auto;
+        max-width: none;
+        max-height: 60vh;
+        margin: 0;
+        overflow-y: auto;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        border: none;
+        border-top: 1px solid var(--border);
+        border-radius: 12px 12px 0 0;
+    }
+
+    /* The map scrolls its own list below the filters. */
+    .cm {
+        height: 60vh;
+        overflow: hidden;
+    }
 }

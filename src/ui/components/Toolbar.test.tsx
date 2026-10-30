@@ -51,6 +51,9 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       getCommentsText={() => ''}
       mapOpen={false}
       onToggleMap={vi.fn()}
+      definitionMode={false}
+      onBlinkToggle={vi.fn()}
+      onBlinkStep={vi.fn()}
       {...overrides}
     />,
   )
@@ -148,6 +151,17 @@ describe('Toolbar blink mode', () => {
   it('names the state on screen, not by the pane colour alone', () => {
     renderToolbar({ diffStyle: 'blink', blinkState: 'before' })
     expect(screen.getByRole('status', { name: 'Blink state' })).toHaveTextContent('BEFORE')
+  })
+
+  it('offers Space, n and p as buttons for a reader without a keyboard', async () => {
+    const onBlinkToggle = vi.fn()
+    const onBlinkStep = vi.fn()
+    renderToolbar({ diffStyle: 'blink', onBlinkToggle, onBlinkStep })
+    await userEvent.click(screen.getByTitle('Previous change'))
+    await userEvent.click(screen.getByTitle('Swap before and after'))
+    await userEvent.click(screen.getByTitle('Next change'))
+    expect(onBlinkStep.mock.calls).toEqual([[-1], [1]])
+    expect(onBlinkToggle).toHaveBeenCalledOnce()
   })
 
   it('says nothing about a state the other modes do not have', () => {
@@ -248,6 +262,22 @@ describe('Toolbar change map control', () => {
   it('marks an open map for assistive technology, not by colour alone', () => {
     renderToolbar({ mapOpen: true })
     expect(screen.getByRole('button', { name: 'Change map' })).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+describe('Toolbar definition mode', () => {
+  it('withholds the mode from a reader with a keyboard', () => {
+    renderToolbar()
+    expect(screen.queryByRole('button', { name: 'Find definitions' })).not.toBeInTheDocument()
+  })
+
+  it('reports a request to switch the mode and marks it on', async () => {
+    const onToggleDefinitionMode = vi.fn()
+    renderToolbar({ definitionMode: true, onToggleDefinitionMode })
+    const toggle = screen.getByRole('button', { name: 'Find definitions' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(toggle)
+    expect(onToggleDefinitionMode).toHaveBeenCalled()
   })
 })
 

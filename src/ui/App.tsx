@@ -16,6 +16,7 @@ import { useFullDiffs, fileKey } from './hooks/useFullDiffs'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useScrollAnchor } from './hooks/useScrollAnchor'
 import { useBlink, usePrefersReducedMotion } from './hooks/useBlink'
+import { useMediaQuery } from './hooks/useMediaQuery'
 import { useMoves } from './hooks/useMoves'
 import { useChangeMap } from './hooks/useChangeMap'
 import { entryTarget, jumpToMove } from './moveJump'
@@ -29,6 +30,9 @@ import { useDefinitions } from './hooks/useDefinitions'
 import { symbolFromPath } from './symbolAt'
 import type { Definition } from '../definitions'
 import { SidebarStorage } from './sidebarStorage'
+
+const PHONE = '(max-width: 767px)'
+const TOUCH = '(pointer: coarse)'
 
 function useWindowSize({ factor }: { factor: number }) {
   const compute = () => Math.round(window.innerWidth * factor)
@@ -47,6 +51,9 @@ function useWindowSize({ factor }: { factor: number }) {
 export function App() {
   const { settings, loaded, updateSettings } = useSettings()
   const blinkMode = settings.diffStyle === 'blink'
+  // Two columns do not fit a phone. The saved settings stay as they are for the next desktop session.
+  const phone = useMediaQuery(PHONE)
+  const viewStyle = phone && settings.diffStyle === 'split' ? 'unified' : settings.diffStyle
   const { patch, repoName, branch, customMode, binaryFiles, tabSizeMap, untrackedFiles, structural, loading, error } = useDiff({
     staged: settings.staged,
     untracked: settings.untracked,
@@ -70,6 +77,11 @@ export function App() {
   const handleToggleCollapse = useCallback(() => {
     setSidebar((prev) => prev.withCollapsed(!prev.collapsed).save())
   }, [])
+
+  // On a phone the file tree is an overlay that starts closed. Its state is not saved over the desktop sidebar.
+  const [phoneTreeOpen, setPhoneTreeOpen] = useState(false)
+  const handleTogglePhoneTree = useCallback(() => setPhoneTreeOpen((open) => !open), [])
+  const treeCollapsed = phone ? !phoneTreeOpen : sidebar.collapsed
 
   const untrackedSet = useMemo(() => new Set(untrackedFiles), [untrackedFiles])
 
@@ -162,7 +174,7 @@ export function App() {
 
   const regions = useMemo(() => changeRegions(files), [files])
   const reducedMotion = usePrefersReducedMotion()
-  const { blinkState } = useBlink({
+  const { blinkState, toggle: toggleBlinkState, navigate: navigateBlink } = useBlink({
     enabled: blinkMode,
     regions,
     autoBlink: settings.autoBlink,
@@ -206,18 +218,21 @@ export function App() {
   }, [])
 
   const { lookup, find, close: closeLookup } = useDefinitions()
+  // A finger has no ctrl or cmd key, so a touch screen switches every tap into a lookup instead.
+  const touch = useMediaQuery(TOUCH)
+  const [definitionMode, setDefinitionMode] = useState(false)
 
   // A ctrl- or cmd-click on a token asks where that name is declared, in the
   // whole repository rather than only in the diff.
   const handleDiffClick = useCallback(
     (event: React.MouseEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return
+      if (!definitionMode && !event.ctrlKey && !event.metaKey) return
       const name = symbolFromPath(event.nativeEvent.composedPath())
       if (!name) return
       event.preventDefault()
       find(name)
     },
-    [find],
+    [definitionMode, find],
   )
 
   const handleDefinitionJump = useCallback(
@@ -293,6 +308,7 @@ export function App() {
 
   const handleFileClick = useCallback((filePath: string) => {
     setActiveFile(filePath)
+    setPhoneTreeOpen(false)
     const el = document.getElementById(`file-${filePath}`)
     if (el) {
       el.scrollIntoView({ block: 'start' })
@@ -313,10 +329,10 @@ export function App() {
         untrackedFiles={untrackedSet}
         structurallyUnchanged={structurallyUnchanged}
         onFileClick={handleFileClick}
-        collapsed={sidebar.collapsed}
-        onToggleCollapse={handleToggleCollapse}
+        collapsed={treeCollapsed}
+        onToggleCollapse={phone ? handleTogglePhoneTree : handleToggleCollapse}
       />
-      {!sidebar.collapsed && (
+      {!treeCollapsed && (
         <CommentTracker comments={comments} onStatusChange={setCommentStatus} onDelete={removeComment} />
       )}
     </div>
@@ -376,9 +392,16 @@ export function App() {
         getCommentsText={formatAllComments}
         mapOpen={settings.mapOpen}
         onToggleMap={toggleMap}
+        onToggleFiles={phone ? handleTogglePhoneTree : undefined}
+        definitionMode={definitionMode}
+        onToggleDefinitionMode={touch ? () => setDefinitionMode((on) => !on) : undefined}
+        onBlinkToggle={toggleBlinkState}
+        onBlinkStep={navigateBlink}
       />
       <div className="app-body">
-        {sidebar.collapsed ? (
+        {phone ? (
+          phoneTreeOpen && <aside className="sidebar sidebar-overlay">{sidebarContent}</aside>
+        ) : sidebar.collapsed ? (
           <aside className="sidebar sidebar-collapsed" style={{ width: sidebar.visibleSize() }}>
             {sidebarContent}
           </aside>
@@ -403,12 +426,12 @@ export function App() {
           <Virtualizer className="main-scroll" contentClassName="main-content">
             <DiffViewer
               files={displayFiles}
-              diffStyle={settings.diffStyle}
+              diffStyle={viewStyle}
               blinkState={blinkState}
               lineDiff={settings.lineDiff}
               tabSizeMap={tabSizeMap}
               defaultTabSize={settings.defaultTabSize}
-              softWrap={settings.softWrap}
+              softWrap={settings.softWrap || phone}
               moves={moves}
               onJumpToMove={handleJumpToMove}
               structuralQuery={structuralQuery}
