@@ -6,6 +6,18 @@ test.describe('mobile view', () => {
     await expect(page.getByText('describeTotal').first()).toBeVisible()
   })
 
+  test('AC-M1: a phone shows one column and wraps long lines', async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 768, 'only a phone is too narrow for two columns')
+    await expect(page.locator('[data-unified]').first()).toBeAttached()
+    await expect(page.locator('pre[data-overflow="wrap"]').first()).toBeAttached()
+  })
+
+  test('AC-M8: the phone view leaves the saved settings unchanged', async ({ page }) => {
+    const saved = await (await page.request.get('/api/settings')).json()
+    expect(saved.diffStyle).toBe('split')
+    expect(saved.softWrap).toBeFalsy()
+  })
+
   test('AC-M9: text fields are large enough that focusing them does not zoom', async ({ page }) => {
     await page.getByTitle('Settings').tap()
     const sizes = await page

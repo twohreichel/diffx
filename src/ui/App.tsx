@@ -16,6 +16,7 @@ import { useFullDiffs, fileKey } from './hooks/useFullDiffs'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useScrollAnchor } from './hooks/useScrollAnchor'
 import { useBlink, usePrefersReducedMotion } from './hooks/useBlink'
+import { useMediaQuery } from './hooks/useMediaQuery'
 import { useMoves } from './hooks/useMoves'
 import { useChangeMap } from './hooks/useChangeMap'
 import { entryTarget, jumpToMove } from './moveJump'
@@ -29,6 +30,8 @@ import { useDefinitions } from './hooks/useDefinitions'
 import { symbolFromPath } from './symbolAt'
 import type { Definition } from '../definitions'
 import { SidebarStorage } from './sidebarStorage'
+
+const PHONE = '(max-width: 767px)'
 
 function useWindowSize({ factor }: { factor: number }) {
   const compute = () => Math.round(window.innerWidth * factor)
@@ -47,6 +50,9 @@ function useWindowSize({ factor }: { factor: number }) {
 export function App() {
   const { settings, loaded, updateSettings } = useSettings()
   const blinkMode = settings.diffStyle === 'blink'
+  // Two columns do not fit a phone. The saved settings stay as they are for the next desktop session.
+  const phone = useMediaQuery(PHONE)
+  const viewStyle = phone && settings.diffStyle === 'split' ? 'unified' : settings.diffStyle
   const { patch, repoName, branch, customMode, binaryFiles, tabSizeMap, untrackedFiles, structural, loading, error } = useDiff({
     staged: settings.staged,
     untracked: settings.untracked,
@@ -403,12 +409,12 @@ export function App() {
           <Virtualizer className="main-scroll" contentClassName="main-content">
             <DiffViewer
               files={displayFiles}
-              diffStyle={settings.diffStyle}
+              diffStyle={viewStyle}
               blinkState={blinkState}
               lineDiff={settings.lineDiff}
               tabSizeMap={tabSizeMap}
               defaultTabSize={settings.defaultTabSize}
-              softWrap={settings.softWrap}
+              softWrap={settings.softWrap || phone}
               moves={moves}
               onJumpToMove={handleJumpToMove}
               structuralQuery={structuralQuery}
