@@ -12,6 +12,16 @@ test.describe('mobile view', () => {
     await expect(page.locator('pre[data-overflow="wrap"]').first()).toBeAttached()
   })
 
+  test('AC-M4: a phone opens the file tree over the diff and closes it on a file tap', async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 768, 'only a phone shows the file tree as an overlay')
+    const overlay = page.locator('.sidebar-overlay')
+    await expect(page.locator('.sidebar')).toHaveCount(0)
+    await page.getByTitle('Files', { exact: true }).tap()
+    await overlay.getByTitle('notes.md').tap()
+    await expect(overlay).toHaveCount(0)
+    await expect(page.locator('[id="file-notes.md"]')).toBeInViewport()
+  })
+
   test('AC-M8: the phone view leaves the saved settings unchanged', async ({ page }) => {
     const saved = await (await page.request.get('/api/settings')).json()
     expect(saved.diffStyle).toBe('split')

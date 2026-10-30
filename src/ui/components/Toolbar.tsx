@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { GitBranch, Map as MapIcon, Settings } from 'lucide-react'
+import { GitBranch, Map as MapIcon, PanelLeftOpen, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
@@ -78,6 +78,7 @@ interface ToolbarProps {
   getCommentsText: () => string
   mapOpen: boolean
   onToggleMap: () => void
+  onToggleFiles?: () => void
 }
 
 export function Toolbar({
@@ -116,6 +117,7 @@ export function Toolbar({
   getCommentsText,
   mapOpen,
   onToggleMap,
+  onToggleFiles,
 }: ToolbarProps) {
   const [copied, setCopied] = useState(false)
   const [manualCopyText, setManualCopyText] = useState<string | null>(null)
@@ -147,6 +149,11 @@ export function Toolbar({
   return (
     <div className="toolbar">
       <div className="toolbar-left">
+        {onToggleFiles && (
+          <button className="btn btn-sm" title="Files" onClick={onToggleFiles}>
+            <PanelLeftOpen size={14} />
+          </button>
+        )}
         <h1 className="toolbar-title">{repoName}</h1>
         <span className="toolbar-version" title="Running version">{`v${APP_VERSION}`}</span>
         {branch && (

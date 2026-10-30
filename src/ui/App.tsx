@@ -77,6 +77,11 @@ export function App() {
     setSidebar((prev) => prev.withCollapsed(!prev.collapsed).save())
   }, [])
 
+  // On a phone the file tree is an overlay that starts closed. Its state is not saved over the desktop sidebar.
+  const [phoneTreeOpen, setPhoneTreeOpen] = useState(false)
+  const handleTogglePhoneTree = useCallback(() => setPhoneTreeOpen((open) => !open), [])
+  const treeCollapsed = phone ? !phoneTreeOpen : sidebar.collapsed
+
   const untrackedSet = useMemo(() => new Set(untrackedFiles), [untrackedFiles])
 
   const files = useMemo(() => {
@@ -299,6 +304,7 @@ export function App() {
 
   const handleFileClick = useCallback((filePath: string) => {
     setActiveFile(filePath)
+    setPhoneTreeOpen(false)
     const el = document.getElementById(`file-${filePath}`)
     if (el) {
       el.scrollIntoView({ block: 'start' })
@@ -319,10 +325,10 @@ export function App() {
         untrackedFiles={untrackedSet}
         structurallyUnchanged={structurallyUnchanged}
         onFileClick={handleFileClick}
-        collapsed={sidebar.collapsed}
-        onToggleCollapse={handleToggleCollapse}
+        collapsed={treeCollapsed}
+        onToggleCollapse={phone ? handleTogglePhoneTree : handleToggleCollapse}
       />
-      {!sidebar.collapsed && (
+      {!treeCollapsed && (
         <CommentTracker comments={comments} onStatusChange={setCommentStatus} onDelete={removeComment} />
       )}
     </div>
@@ -382,9 +388,12 @@ export function App() {
         getCommentsText={formatAllComments}
         mapOpen={settings.mapOpen}
         onToggleMap={toggleMap}
+        onToggleFiles={phone ? handleTogglePhoneTree : undefined}
       />
       <div className="app-body">
-        {sidebar.collapsed ? (
+        {phone ? (
+          phoneTreeOpen && <aside className="sidebar sidebar-overlay">{sidebarContent}</aside>
+        ) : sidebar.collapsed ? (
           <aside className="sidebar sidebar-collapsed" style={{ width: sidebar.visibleSize() }}>
             {sidebarContent}
           </aside>

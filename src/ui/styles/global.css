@@ -397,6 +397,17 @@ body {
     min-width: 40px;
 }
 
+/* On a phone the file tree lies over the diff and leaves the diff its full width. */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 150;
+    width: min(320px, 85vw);
+    height: auto;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
+}
+
 .sidebar-resize-handle {
     width: 4px;
     flex-shrink: 0;
