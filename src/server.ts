@@ -133,6 +133,10 @@ export function createApp(clientDir: string, customDiffArgs?: string[], commentS
     if (!path || !version) {
       return c.json({ error: 'Missing path or version' }, 400)
     }
+    const patch = isCustomMode ? getCustomGitDiff(customDiffArgs) : getGitDiff({ staged: true, untracked: true })
+    if (!parseFilePaths(patch).includes(path)) {
+      return c.json({ error: 'File not in current diff' }, 404)
+    }
     const content = getFileContent(path, version)
     if (!content) {
       return c.json({ error: 'File not found' }, 404)
