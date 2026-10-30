@@ -53,7 +53,7 @@ export function App() {
     // Blink shows one complete state at a time, which only full context provides.
     context: blinkMode ? 'full' : settings.context,
   })
-  const { comments, addComment, removeComment, editComment, setCommentStatus, copyAllComments } =
+  const { comments, addComment, removeComment, editComment, setCommentStatus, formatAllComments } =
     useComments()
   const [activeFile, setActiveFile] = useState<string | null>(null)
   const [sidebar, setSidebar] = useState(() => SidebarStorage.load())
@@ -373,7 +373,7 @@ export function App() {
         onDefaultTabSizeChange={(size) => updateSettings({ defaultTabSize: size })}
         onSoftWrapChange={(softWrap) => updateSettings({ softWrap })}
         onBrowserChange={(browser) => updateSettings({ browser })}
-        onCopyComments={copyAllComments}
+        getCommentsText={formatAllComments}
         mapOpen={settings.mapOpen}
         onToggleMap={toggleMap}
       />

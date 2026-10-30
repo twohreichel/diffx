@@ -98,11 +98,6 @@ export function useComments() {
     [comments],
   )
 
-  const copyAllComments = useCallback(async () => {
-    const text = formatAllComments()
-    await navigator.clipboard.writeText(text)
-  }, [formatAllComments])
-
   return {
     comments,
     addComment,
@@ -111,6 +106,5 @@ export function useComments() {
     setCommentStatus,
     getAnnotationsForFile,
     formatAllComments,
-    copyAllComments,
   }
 }
