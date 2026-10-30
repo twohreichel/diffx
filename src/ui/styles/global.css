@@ -51,6 +51,10 @@ body {
 
 .app {
     height: 100vh;
+    /* Mobile Safari counts its own toolbar into 100vh. */
+    height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+        env(safe-area-inset-bottom) env(safe-area-inset-left);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1594,4 +1598,13 @@ body {
     font-size: 11px;
     line-height: 1.5;
     color: var(--text-secondary);
+}
+
+/* iOS zooms into any text field below 16px on focus. The rule has to beat every component's own size. */
+@media (pointer: coarse) {
+    input:not([type="checkbox"]),
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
 }
