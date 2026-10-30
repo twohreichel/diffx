@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 
 /** Opens or closes the menu a phone moves the toolbar into. A wider screen shows the toolbar itself. */
 async function toggleMenu(page: Page) {
@@ -12,8 +12,7 @@ async function openSettings(page: Page) {
 }
 
 /** Answers the comments API in the page, so a comment never reaches the server the other devices share. */
-async function keepCommentsInPage(page: Page) {
-  let comments: Record<string, unknown>[] = []
+async function keepCommentsInPage(page: Page, comments: Record<string, unknown>[] = []) {
   await page.route('**/api/comments**', (route) => {
     const request = route.request()
     const id = request.url().split('/api/comments/')[1]
@@ -33,6 +32,43 @@ async function keepCommentsInPage(page: Page) {
     return route.fulfill({ json: comments })
   })
 }
+
+/** Turns the definition mode on and taps `add`, which opens the declarations of `add`. */
+async function lookUpAdd(page: Page): Promise<Locator> {
+  await toggleMenu(page)
+  await page.getByTitle('Find definitions').tap()
+  await toggleMenu(page)
+  await page.locator('[id="file-math.ts"]').getByText('add', { exact: true }).first().tap()
+  return page.getByRole('dialog', { name: 'Declarations of add' })
+}
+
+/** Copies one comment in a browser that refuses every way to the clipboard. */
+async function copyWithoutClipboard(page: Page): Promise<Locator> {
+  await keepCommentsInPage(page, [
+    { id: 'c1', filePath: 'math.ts', side: 'additions', lineNumber: 6, lineContent: '  return add(value, value)', body: 'Name the sum', status: 'open', createdAt: 0, replies: [] },
+  ])
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined })
+    document.execCommand = () => false
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Copy comments (1)' }).tap()
+  return page.getByRole('dialog', { name: 'Copy comments manually' })
+}
+
+const PANELS: [string, (page: Page) => Promise<Locator>][] = [
+  ['change map', async (page) => {
+    await toggleMenu(page)
+    await page.getByTitle('Change map', { exact: true }).tap()
+    return page.locator('.cm')
+  }],
+  ['settings', async (page) => {
+    await openSettings(page)
+    return page.locator('.settings-menu')
+  }],
+  ['declarations', lookUpAdd],
+  ['manual copy', copyWithoutClipboard],
+]
 
 test.describe('mobile view', () => {
   test.beforeEach(async ({ page }) => {
@@ -102,12 +138,23 @@ test.describe('mobile view', () => {
   })
 
   test('AC-M5: a finger looks up where a name is declared', async ({ page }) => {
-    await toggleMenu(page)
-    await page.getByTitle('Find definitions').tap()
-    await toggleMenu(page)
-    await page.locator('[id="file-math.ts"]').getByText('add', { exact: true }).first().tap()
-    await expect(page.getByRole('dialog', { name: 'Declarations of add' })).toContainText('math.ts:1')
+    await expect(await lookUpAdd(page)).toContainText('math.ts:1')
   })
+
+  test('AC-M7: without clipboard access the comments wait in a field to copy by hand', async ({ page }) => {
+    await expect((await copyWithoutClipboard(page)).locator('textarea')).toHaveValue(/Name the sum/)
+  })
+
+  for (const [name, open] of PANELS) {
+    test(`AC-M6: a phone opens the ${name} as a sheet along the bottom edge`, async ({ page }) => {
+      test.skip(page.viewportSize()!.width >= 768, 'only a phone turns panels into sheets')
+      const panel = await open(page)
+      await expect(panel).toBeVisible()
+      const box = (await panel.boundingBox())!
+      const { width, height } = page.viewportSize()!
+      expect([box.x, box.width, Math.round(box.y + box.height)]).toEqual([0, width, height])
+    })
+  }
 
   test('AC-M4: a phone opens the file tree over the diff and closes it on a file tap', async ({ page }) => {
     test.skip(page.viewportSize()!.width >= 768, 'only a phone shows the file tree as an overlay')

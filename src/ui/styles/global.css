@@ -1737,3 +1737,33 @@ body {
         opacity: 1;
     }
 }
+
+/* On a phone every panel opens as a sheet along the bottom edge, where a thumb reaches it and no part sits off-screen. */
+@media (max-width: 767px) {
+    .cm,
+    .dp,
+    .settings-menu,
+    .copy-fallback {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 200;
+        width: auto;
+        max-width: none;
+        max-height: 60vh;
+        margin: 0;
+        overflow-y: auto;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        border: none;
+        border-top: 1px solid var(--border);
+        border-radius: 12px 12px 0 0;
+    }
+
+    /* The map scrolls its own list below the filters. */
+    .cm {
+        height: 60vh;
+        overflow: hidden;
+    }
+}
