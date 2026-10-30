@@ -173,7 +173,7 @@ export function App() {
 
   const regions = useMemo(() => changeRegions(files), [files])
   const reducedMotion = usePrefersReducedMotion()
-  const { blinkState } = useBlink({
+  const { blinkState, toggle: toggleBlinkState, navigate: navigateBlink } = useBlink({
     enabled: blinkMode,
     regions,
     autoBlink: settings.autoBlink,
@@ -389,6 +389,8 @@ export function App() {
         mapOpen={settings.mapOpen}
         onToggleMap={toggleMap}
         onToggleFiles={phone ? handleTogglePhoneTree : undefined}
+        onBlinkToggle={toggleBlinkState}
+        onBlinkStep={navigateBlink}
       />
       <div className="app-body">
         {phone ? (

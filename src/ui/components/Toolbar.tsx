@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Ellipsis, GitBranch, Map as MapIcon, PanelLeftOpen, Settings } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Ellipsis, GitBranch, Map as MapIcon, PanelLeftOpen, Settings } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
@@ -79,6 +79,8 @@ interface ToolbarProps {
   mapOpen: boolean
   onToggleMap: () => void
   onToggleFiles?: () => void
+  onBlinkToggle: () => void
+  onBlinkStep: (direction: -1 | 1) => void
 }
 
 export function Toolbar({
@@ -118,6 +120,8 @@ export function Toolbar({
   mapOpen,
   onToggleMap,
   onToggleFiles,
+  onBlinkToggle,
+  onBlinkStep,
 }: ToolbarProps) {
   const [copied, setCopied] = useState(false)
   const [manualCopyText, setManualCopyText] = useState<string | null>(null)
@@ -392,6 +396,19 @@ export function Toolbar({
         >
           <Ellipsis size={14} />
         </button>
+        {diffStyle === 'blink' && (
+          <div className="blink-touch-bar" role="group" aria-label="Blink controls">
+            <button className="btn btn-sm" title="Previous change" onClick={() => onBlinkStep(-1)}>
+              <ChevronLeft size={14} />
+            </button>
+            <button className="btn btn-sm" title="Swap before and after" onClick={onBlinkToggle}>
+              {blinkState === 'before' ? 'BEFORE' : 'AFTER'}
+            </button>
+            <button className="btn btn-sm" title="Next change" onClick={() => onBlinkStep(1)}>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
         {manualCopyText !== null && (
           <div className="copy-fallback" role="dialog" aria-label="Copy comments manually">
             <p>The browser blocked copying. Select the text and copy it.</p>

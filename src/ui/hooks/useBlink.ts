@@ -59,12 +59,18 @@ interface BlinkOptions {
  * Neither state is re-rendered on a toggle. Both columns stay in the DOM and only
  * the visible one changes, which is what keeps every shared line in place.
  */
-export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOptions): { blinkState: BlinkState } {
+export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOptions): {
+  blinkState: BlinkState
+  toggle: () => void
+  navigate: (direction: -1 | 1) => void
+} {
   const [blinkState, setBlinkState] = useState<BlinkState>('after')
   const [autoStopped, setAutoStopped] = useState(false)
   const current = useRef<BlinkState>(blinkState)
   const region = useRef(-1)
   current.current = blinkState
+
+  const toggle = useCallback(() => setBlinkState(toggleBlink), [])
 
   const navigate = useCallback(
     (direction: -1 | 1) => {
@@ -78,7 +84,7 @@ export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOp
   useShortcuts(
     enabled
       ? {
-          ' ': () => setBlinkState(toggleBlink),
+          ' ': toggle,
           n: () => navigate(1),
           p: () => navigate(-1),
         }
@@ -100,5 +106,5 @@ export function useBlink({ enabled, regions, autoBlink, reducedMotion }: BlinkOp
     }
   }, [interval])
 
-  return { blinkState }
+  return { blinkState, toggle, navigate }
 }

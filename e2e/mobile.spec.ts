@@ -37,6 +37,18 @@ test.describe('mobile view', () => {
     await expect(page.getByTitle('Settings')).toBeVisible()
   })
 
+  test('AC-M6: a tap swaps before and after in blink mode', async ({ page }) => {
+    await page.route('**/api/settings', async (route) => {
+      const response = await route.fetch()
+      await route.fulfill({ response, json: { ...(await response.json()), diffStyle: 'blink' } })
+    })
+    await page.goto('/')
+    const swap = page.getByTitle('Swap before and after')
+    await expect(swap).toHaveText('AFTER')
+    await swap.tap()
+    await expect(swap).toHaveText('BEFORE')
+  })
+
   test('AC-M4: a phone opens the file tree over the diff and closes it on a file tap', async ({ page }) => {
     test.skip(page.viewportSize()!.width >= 768, 'only a phone shows the file tree as an overlay')
     const overlay = page.locator('.sidebar-overlay')

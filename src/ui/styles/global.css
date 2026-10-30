@@ -1706,6 +1706,28 @@ body {
     }
 }
 
+/* Without a keyboard, Space, n and p need buttons. They sit at the bottom where a thumb reaches them. */
+.blink-touch-bar {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    .blink-touch-bar {
+        position: fixed;
+        left: 50%;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 120;
+        display: flex;
+        gap: 8px;
+        padding: 6px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+}
+
 /* Without hover these actions would never appear. */
 @media (hover: none) {
     .comment-bubble-action,

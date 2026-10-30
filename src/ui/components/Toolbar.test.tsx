@@ -51,6 +51,8 @@ function renderToolbar(overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) {
       getCommentsText={() => ''}
       mapOpen={false}
       onToggleMap={vi.fn()}
+      onBlinkToggle={vi.fn()}
+      onBlinkStep={vi.fn()}
       {...overrides}
     />,
   )
@@ -148,6 +150,17 @@ describe('Toolbar blink mode', () => {
   it('names the state on screen, not by the pane colour alone', () => {
     renderToolbar({ diffStyle: 'blink', blinkState: 'before' })
     expect(screen.getByRole('status', { name: 'Blink state' })).toHaveTextContent('BEFORE')
+  })
+
+  it('offers Space, n and p as buttons for a reader without a keyboard', async () => {
+    const onBlinkToggle = vi.fn()
+    const onBlinkStep = vi.fn()
+    renderToolbar({ diffStyle: 'blink', onBlinkToggle, onBlinkStep })
+    await userEvent.click(screen.getByTitle('Previous change'))
+    await userEvent.click(screen.getByTitle('Swap before and after'))
+    await userEvent.click(screen.getByTitle('Next change'))
+    expect(onBlinkStep.mock.calls).toEqual([[-1], [1]])
+    expect(onBlinkToggle).toHaveBeenCalledOnce()
   })
 
   it('says nothing about a state the other modes do not have', () => {
