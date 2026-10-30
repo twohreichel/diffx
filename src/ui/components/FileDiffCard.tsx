@@ -169,6 +169,8 @@ export const FileDiffCard = memo(function FileDiffCard({
       // underline adds the second, non-colour cue Constitution IX asks for.
       unsafeCSS:
         `:host { --diffs-tab-size: ${tabSize}; } [data-diff-span] { border-bottom: 2px solid var(--diffs-fg); }` +
+        // The expand button fills its separator row, so the rows of both columns grow together to a finger's size.
+        '@media (pointer: coarse) { [data-separator=line-info], [data-separator=line-info-basic], [data-separator=metadata] { height: 44px; } [data-expand-button] { min-width: 44px; } }' +
         (blink ? blinkCSS(blinkState) : '') +
         movesCSS(moves, filePath) +
         (marked ? structuralCSS(marked) : ''),
