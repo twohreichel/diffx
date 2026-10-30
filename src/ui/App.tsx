@@ -32,6 +32,7 @@ import type { Definition } from '../definitions'
 import { SidebarStorage } from './sidebarStorage'
 
 const PHONE = '(max-width: 767px)'
+const TOUCH = '(pointer: coarse)'
 
 function useWindowSize({ factor }: { factor: number }) {
   const compute = () => Math.round(window.innerWidth * factor)
@@ -217,18 +218,21 @@ export function App() {
   }, [])
 
   const { lookup, find, close: closeLookup } = useDefinitions()
+  // A finger has no ctrl or cmd key, so a touch screen switches every tap into a lookup instead.
+  const touch = useMediaQuery(TOUCH)
+  const [definitionMode, setDefinitionMode] = useState(false)
 
   // A ctrl- or cmd-click on a token asks where that name is declared, in the
   // whole repository rather than only in the diff.
   const handleDiffClick = useCallback(
     (event: React.MouseEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return
+      if (!definitionMode && !event.ctrlKey && !event.metaKey) return
       const name = symbolFromPath(event.nativeEvent.composedPath())
       if (!name) return
       event.preventDefault()
       find(name)
     },
-    [find],
+    [definitionMode, find],
   )
 
   const handleDefinitionJump = useCallback(
@@ -389,6 +393,8 @@ export function App() {
         mapOpen={settings.mapOpen}
         onToggleMap={toggleMap}
         onToggleFiles={phone ? handleTogglePhoneTree : undefined}
+        definitionMode={definitionMode}
+        onToggleDefinitionMode={touch ? () => setDefinitionMode((on) => !on) : undefined}
         onBlinkToggle={toggleBlinkState}
         onBlinkStep={navigateBlink}
       />

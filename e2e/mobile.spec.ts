@@ -1,8 +1,13 @@
 import { test, expect, type Page } from '@playwright/test'
 
-async function openSettings(page: Page) {
+/** Opens or closes the menu a phone moves the toolbar into. A wider screen shows the toolbar itself. */
+async function toggleMenu(page: Page) {
   const more = page.getByTitle('More', { exact: true })
   if (await more.isVisible()) await more.tap()
+}
+
+async function openSettings(page: Page) {
+  await toggleMenu(page)
   await page.getByTitle('Settings').tap()
 }
 
@@ -94,6 +99,14 @@ test.describe('mobile view', () => {
     await expect(card.getByRole('button', { name: 'Reopen comment' })).toBeVisible()
     await card.getByRole('button', { name: 'Delete comment' }).tap()
     await expect(card.locator('.comment-bubble')).toHaveCount(0)
+  })
+
+  test('AC-M5: a finger looks up where a name is declared', async ({ page }) => {
+    await toggleMenu(page)
+    await page.getByTitle('Find definitions').tap()
+    await toggleMenu(page)
+    await page.locator('[id="file-math.ts"]').getByText('add', { exact: true }).first().tap()
+    await expect(page.getByRole('dialog', { name: 'Declarations of add' })).toContainText('math.ts:1')
   })
 
   test('AC-M4: a phone opens the file tree over the diff and closes it on a file tap', async ({ page }) => {

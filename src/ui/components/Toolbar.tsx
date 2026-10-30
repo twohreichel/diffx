@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Ellipsis, GitBranch, Map as MapIcon, PanelLeftOpen, Settings } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Ellipsis, GitBranch, Map as MapIcon, PanelLeftOpen, Settings, SquareFunction } from 'lucide-react'
 import type { DiffOptions } from '../hooks/useDiff'
 import { CONTEXT_STEPS, type ContextWidth } from '../../context'
 import { LINE_DIFF_MODES, type LineDiffMode } from '../../lineDiff'
@@ -79,6 +79,8 @@ interface ToolbarProps {
   mapOpen: boolean
   onToggleMap: () => void
   onToggleFiles?: () => void
+  definitionMode: boolean
+  onToggleDefinitionMode?: () => void
   onBlinkToggle: () => void
   onBlinkStep: (direction: -1 | 1) => void
 }
@@ -120,6 +122,8 @@ export function Toolbar({
   mapOpen,
   onToggleMap,
   onToggleFiles,
+  definitionMode,
+  onToggleDefinitionMode,
   onBlinkToggle,
   onBlinkStep,
 }: ToolbarProps) {
@@ -234,6 +238,16 @@ export function Toolbar({
           >
             <MapIcon size={14} />
           </button>
+          {onToggleDefinitionMode && (
+            <button
+              className={`btn btn-sm ${definitionMode ? 'btn-active' : ''}`}
+              title="Find definitions"
+              aria-pressed={definitionMode}
+              onClick={onToggleDefinitionMode}
+            >
+              <SquareFunction size={14} />
+            </button>
+          )}
           <div className="settings-wrapper" ref={settingsRef}>
             <button
               className={`btn btn-sm settings-btn ${settingsOpen ? 'btn-active' : ''}`}
