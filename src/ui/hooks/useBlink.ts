@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { regionLine, stepRegion, toggleBlink, type AutoBlink, type BlinkState, type ChangeRegion } from '../../blink'
+import { useMediaQuery } from './useMediaQuery'
 import { useShortcuts } from './useShortcuts'
 
 /** The renderer owns the scroll container and takes only a class name. */
@@ -42,18 +43,7 @@ function scrollToRegion(region: ChangeRegion, state: BlinkState): void {
 
 /** True while the reader has asked the system for as little motion as possible. */
 export function usePrefersReducedMotion(): boolean {
-  const query = typeof window === 'undefined' ? null : window.matchMedia?.(REDUCED_MOTION)
-  const [reduced, setReduced] = useState(() => query?.matches ?? false)
-
-  useEffect(() => {
-    if (!query) return
-    const update = () => setReduced(query.matches)
-    update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [query])
-
-  return reduced
+  return useMediaQuery(REDUCED_MOTION)
 }
 
 interface BlinkOptions {
